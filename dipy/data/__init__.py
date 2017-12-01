@@ -289,8 +289,45 @@ def get_data(name='small_64D'):
         fimg = pjoin(DATA_DIR, 'ActiveAx_synth_2d.nii')
         scheme = pjoin(DATA_DIR, 'ActiveAx_synth_scheme.txt')
         return fimg, scheme
-
-
+    if name == 'ActiveAx_monkey_b1925':
+        fimg = pjoin(DATA_DIR, 'ActiveAx4CCfit_exvivo_E2503_Mbrain1_PGSE_b1925_3b0_N90.nii')
+        scheme = pjoin(DATA_DIR, 'ActiveAxG140_PM.scheme1.txt')
+        return fimg, scheme
+    if name == 'ActiveAx_monkey_b1931':
+        fimg = pjoin(DATA_DIR, 'ActiveAx4CCfit_exvivo_E2503_Mbrain1_PGSE_b1931_3b0_N90.nii')
+        scheme = pjoin(DATA_DIR, 'ActiveAxG140_PM.scheme1.txt')
+        return fimg, scheme
+    if name == 'ActiveAx_monkey_b3091':
+        fimg = pjoin(DATA_DIR, 'ActiveAx4CCfit_exvivo_E2503_Mbrain1_PGSE_b3091_3b0_N90.nii')
+        scheme = pjoin(DATA_DIR, 'ActiveAxG140_PM.scheme1.txt')
+        return fimg, scheme
+    if name == 'ActiveAx_monkey_b13183':
+        fimg = pjoin(DATA_DIR, 'ActiveAx4CCfit_exvivo_E2503_Mbrain1_PGSE_b13183_3b0_N90.nii')
+        scheme = pjoin(DATA_DIR, 'ActiveAxG140_PM.scheme1.txt')
+        return fimg, scheme
+    if name == 'mask_CC_monkey':
+        fimg = pjoin(DATA_DIR, 'mask_CC_monkey.nii')
+        return fimg
+    if name == 'NODDIx_example':
+        fimg = pjoin(DATA_DIR, 'small_NODDIx_HCP.hdr')
+        scheme = pjoin(DATA_DIR, 'HCP_scheme.txt')
+        return fimg, scheme
+    if name == 'ActiveAx_in_vivo1':
+        fimg = pjoin(DATA_DIR, 'shell1_activeax_in_vivo.nii')
+        scheme = pjoin(DATA_DIR, 'ActiveAx_scheme_in_vivo.txt')
+        return fimg, scheme
+    if name == 'ActiveAx_in_vivo2':
+        fimg = pjoin(DATA_DIR, 'shell2_activeax_in_vivo.nii')
+        return fimg
+    if name == 'ActiveAx_in_vivo3':
+        fimg = pjoin(DATA_DIR, 'shell3_activeax_in_vivo.nii')
+        return fimg
+    if name == 'ActiveAx_in_vivo4':
+        fimg = pjoin(DATA_DIR, 'shell4_activeax_in_vivo.nii')
+        return fimg
+    if name == 'mask_CC_in_vivo':
+        fimg = pjoin(DATA_DIR, 'mask_CC_in_vivo.hdr')
+        return fimg
 
 def _gradient_from_file(filename):
     """Reads a gradient file saved as a text file compatible with np.loadtxt
