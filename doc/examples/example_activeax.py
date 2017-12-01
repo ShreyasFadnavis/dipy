@@ -27,7 +27,7 @@ bvecs = params[:, 0:3]
 G = params[:, 3] / 10 ** 6  # gradient strength
 big_delta = params[:, 4]
 small_delta = params[:, 5]
-te = params[:, 6]
+#te = params[:, 6]
 gamma = 2.675987 * 10 ** 8
 bvals = gamma ** 2 * G ** 2 * small_delta ** 2 * (big_delta - small_delta / 3.)
 bvals = bvals
@@ -57,7 +57,7 @@ def norm_meas_Aax(signal):
     return f
 
 fit_method = 'MIX'
-activeax_model = activeax_fast.ActiveAxModel(gtab, fit_method=fit_method)
+activeax_model = activeax_fast.ActiveAxModel(gtab, params, fit_method=fit_method)
 #activeax_model = activeax.ActiveAxModel(gtab, fit_method=fit_method)
 activeax_fit = np.zeros((10, 10, 7))
 t1 = time()

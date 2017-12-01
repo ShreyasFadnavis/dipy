@@ -7,8 +7,8 @@ from scipy.optimize import least_squares
 import cvxpy as cvx
 # from dipy.data import get_data
 from scipy.optimize import differential_evolution, minimize
-#import scipy
-from numba import jit
+import scipy
+
 
 gamma = 2.675987 * 10 ** 8
 D_intra = 0.6 * 10 ** 3
@@ -24,33 +24,6 @@ def make_signal_param(signal, bvals, bvecs, G, small_delta, big_delta):
     return signal_param
 
 
-@jit(nopython=True, nogil=True, cache=True)
-def func_bvec(bvecs, n):
-    g_per = np.zeros((len(bvecs)))
-    for i in range(len(bvecs)):
-            g_per[i] = np.dot(bvecs[i, :], bvecs[i, :]) - \
-                       np.dot(bvecs[i, :], n) ** 2
-    return g_per
-
-
-@jit(nopython=True, nogil=True, cache=True)
-def func_mul(x, am2, small_delta, big_delta, D_intra):
-    M = len(am2)
-    N = len(small_delta)
-    summ = np.zeros((N, M))
-    for i in range(len(am2)):
-        num = (2 * D_intra * am2[i] * small_delta) - 2 + \
-              (2 * np.exp(-(D_intra * am2[i] * small_delta))) + \
-              (2 * np.exp(-(D_intra * am2[i] * big_delta))) - \
-              (np.exp(-(D_intra * am2[i] * (big_delta - small_delta)))) - \
-              (np.exp(-(D_intra * am2[i] * (big_delta + small_delta))))
-
-        denom = (D_intra ** 2) * (am2[i] ** 3) * ((x[2]) ** 2 * am2[i] - 1)
-        summ[:, i] = num / denom
-        return summ
-
-
-# @profile
 def activax_exvivo_compartments(x, bvals, bvecs, G, small_delta, big_delta,
                                 gamma=gamma, D_intra=0.6 * 10 ** 3,
                                 D_iso=2 * 10 ** 3, debug=False):
@@ -154,16 +127,8 @@ def activax_exvivo_compartments(x, bvals, bvecs, G, small_delta, big_delta,
         denom = (D_intra ** 2) * (am2[i] ** 3) * ((x[2]) ** 2 * am2[i] - 1)
         summ[:, i] = num / denom
 
-#    summ = func_mul(x, am2, small_delta, big_delta, D_intra)
-
-#    summ_rows = np.zeros((len(summ)))
-#    for i in range(len(summ)):
-#        summ_rows[i] = sum(summ[i, :])
-
     summ_rows = np.sum(summ, axis=1)
     g_per = np.zeros(bvals.shape)
-
-#    g_per = func_bvec(bvecs, n)
 
     for i in range(len(bvecs)):
         g_per[i] = np.dot(bvecs[i, :], bvecs[i, :]) - \
@@ -188,8 +153,7 @@ def activax_exvivo_compartments(x, bvals, bvecs, G, small_delta, big_delta,
             yhat_ball, yhat_dot
     return yhat_cylinder, yhat_zeppelin, yhat_ball, yhat_dot
 
-#@profile
-#@jit(nopython=True, nogil=True, cache=True)
+
 def activax_exvivo_model(x, bvals, bvecs, G, small_delta, big_delta,
                          gamma=gamma,
                          D_intra=0.6 * 10 ** 3, D_iso=2 * 10 ** 3,
@@ -445,7 +409,7 @@ def activax_exvivo_model2(x_fe, bvals, bvecs, G, small_delta, big_delta,
 
     return np.exp(-phi)
 
-#@profile
+
 def activeax_cost_one(phi, signal):  # sigma
 
     """
@@ -479,8 +443,10 @@ def activeax_cost_one(phi, signal):  # sigma
     yhat = np.dot(phi, f)  # - sigma
     return np.dot((signal - yhat).T, signal - yhat)
 
-#@profile
+
 def stoc_search_cost_func(x, signal, bvals, bvecs, G, small_delta, big_delta):
+    phi = activax_exvivo_model(x, bvals, bvecs, G,
+                               small_delta, big_delta)
 
     """
     Aax_exvivo_nlin
@@ -518,17 +484,10 @@ def stoc_search_cost_func(x, signal, bvals, bvecs, G, small_delta, big_delta):
         (signal -  S)^T(signal -  S)
     """
 
-    phi = activax_exvivo_model(x, bvals, bvecs, G,
-                               small_delta, big_delta,
-                               gamma=gamma,
-                               D_intra=0.6 * 10 ** 3, D_iso=2 * 10 ** 3,
-                               debug=False)
-
     error_one = activeax_cost_one(phi, signal)
     return error_one
 
-#@profile
-#@jit
+
 def dif_evol(signal, bvals, bvecs, G, small_delta, big_delta):
 
     """
@@ -558,16 +517,16 @@ def dif_evol(signal, bvals, bvecs, G, small_delta, big_delta):
     """
 
     bounds = [(0.01, np.pi), (0.01, np.pi), (0.1, 11), (0.1, 0.8)]
-    res_one = differential_evolution(stoc_search_cost_func, bounds, args=(signal, bvals,
-                                                             bvecs, G,
-                                                             small_delta,
-                                                             big_delta))
-
-
-#    res_one = scipy.optimize.minimize(stoc_search_cost_func, 2*x, args=(signal, bvals,
+#    res_one = differential_evolution(stoc_search_cost_func, bounds, args=(signal, bvals,
 #                                                             bvecs, G,
 #                                                             small_delta,
-#                                                             big_delta), method='Powell')
+#                                                             big_delta))
+#
+
+    res_one = scipy.optimize.minimize(stoc_search_cost_func, bounds, args=(signal, bvals,
+                                                             bvecs, G,
+                                                             small_delta,
+                                                             big_delta), method='Powell', tol=None, callback=None, options={'disp': False, 'return_all': False, 'maxiter': None, 'direc': None, 'func': None, 'maxfev': None, 'xtol': 0.0001, 'ftol': 0.0001})
 
 
     return res_one.x

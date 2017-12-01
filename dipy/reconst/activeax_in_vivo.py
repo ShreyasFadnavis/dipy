@@ -1,4 +1,11 @@
 # -*- coding: utf-8 -*-
+"""
+Created on Tue Nov 07 16:46:21 2017
+
+@author: mafzalid
+"""
+
+# -*- coding: utf-8 -*-
 from dipy.reconst.base import ReconstModel
 import numpy as np
 import cvxpy as cvx
@@ -8,11 +15,8 @@ from dipy.reconst.recspeed import S1, S2, S2_new, activeax_cost_one
 # from dipy.data import get_data
 
 gamma = 2.675987 * 10 ** 8
-D_intra = 0.6 * 10 ** 3
-# fname, fscanner = get_data('ActiveAx_synth_2d')
-# params = np.loadtxt(fscanner)
-# G = params[:, 3] / 10 ** 6  # gradient strength
-D_iso = 2 * 10 ** 3
+# D_intra = 1.7 * 10 ** 3
+# D_iso = 3 * 10 ** 3
 
 am = np.array([1.84118307861360, 5.33144196877749,
                8.53631578218074, 11.7060038949077,
@@ -49,7 +53,7 @@ am = np.array([1.84118307861360, 5.33144196877749,
 
 class ActiveAxModel(ReconstModel):
 
-    def __init__(self, gtab, params, fit_method='MIX'):
+    def __init__(self, gtab, params, D_intra, D_iso, fit_method='MIX'):
         r""" MIX framework (MIX) [1]_.
 
         The MIX computes the ActiveAx parameters. ActiveAx is a multi
@@ -85,14 +89,16 @@ class ActiveAxModel(ReconstModel):
 #        algorithm 1000 default, 1
         self.xtol = 1e-8  # Tolerance for termination, nonlinear least square
 #        1e-8 default, 1e-3
+        self.D_intra = D_intra
+        self.D_iso = D_iso
         self.gtab = gtab
         self.big_delta = gtab.big_delta
         self.small_delta = gtab.small_delta
         self.gamma = gamma
         self.G = params[:, 3] / 10 ** 6  # gradient strength
         self.G2 = self.G ** 2
-        self.yhat_ball = D_iso * self.gtab.bvals
-        self.L = self.gtab.bvals * D_intra
+        self.yhat_ball = self.D_iso * self.gtab.bvals
+        self.L = self.gtab.bvals * self.D_intra
         self.phi_inv = np.zeros((4, 4))
         self.yhat_zeppelin = np.zeros(self.small_delta.shape[0])
         self.yhat_cylinder = np.zeros(self.small_delta.shape[0])
@@ -111,7 +117,7 @@ class ActiveAxModel(ReconstModel):
             The measured signal from one voxel.
 
         """
-        bounds = np.array([(0.011, np.pi), (0.011, np.pi), (0.11, 11),
+        bounds = np.array([(0.011, np.pi), (0.011, np.pi), (0.11, 16),
                           (0.11, 0.8)])
         res_one = differential_evolution(self.stoc_search_cost, bounds,
                                          maxiter=self.maxiter, args=(data,))
@@ -131,7 +137,7 @@ class ActiveAxModel(ReconstModel):
         fe = self.cvx_fit(data, phi)
         x_fe = self.x_and_fe_to_x_fe(x, fe)
         bounds = ([0.01, 0.01,  0.01, 0.01, 0.01, 0.1, 0.01], [0.9,  0.9,  0.9,
-                  np.pi, np.pi, 11, 0.9])
+                  np.pi, np.pi, 16, 0.9])
         res = least_squares(self.nlls_cost, x_fe, bounds=(bounds),
                             xtol=self.xtol, args=(data,))
         result = res.x
@@ -270,7 +276,7 @@ class ActiveAxModel(ReconstModel):
 
     def S3(self):
         # ball
-        yhat_ball = D_iso * self.gtab.bvals
+        yhat_ball = self.D_iso * self.gtab.bvals
         return yhat_ball
 
     def S4(self):
@@ -296,9 +302,9 @@ class ActiveAxModel(ReconstModel):
 
     def Phi(self, x):
         x1, self.x2 = self.x_to_xs(x)
-        S2(self.x2, self.gtab.bvals, self.gtab.bvecs, self.yhat_zeppelin)
+        S2(self.x2, self.gtab.bvals, self.gtab.bvecs, self.D_intra, self.yhat_zeppelin)
         S1(x1, am, self.gtab.bvecs, self.gtab.bvals, self.small_delta,
-           self.big_delta, self.G2, self.L, self.yhat_cylinder)
+           self.big_delta, self.G2, self.L, self.D_intra, self.yhat_cylinder)
         self.exp_phi1[:, 0] = np.exp(-self.yhat_cylinder)
         self.exp_phi1[:, 1] = np.exp(-self.yhat_zeppelin)
         return self.exp_phi1
@@ -306,9 +312,9 @@ class ActiveAxModel(ReconstModel):
     def Phi2(self, x_fe):
         x, fe = self.x_fe_to_x_and_fe(x_fe)
         x1 = x[0:3]
-        S2_new(x_fe, self.gtab.bvals,  self.gtab.bvecs, self.yhat_zeppelin)
+        S2_new(x_fe, self.gtab.bvals,  self.gtab.bvecs, self.D_intra, self.yhat_zeppelin)
         S1(x1, am, self.gtab.bvecs, self.gtab.bvals, self.gtab.small_delta,
-           self.gtab.big_delta, self.G2, self.L, self.yhat_cylinder)
+           self.gtab.big_delta, self.G2, self.L, self.D_intra, self.yhat_cylinder)
         self.exp_phi1[:, 0] = np.exp(-self.yhat_cylinder)
         self.exp_phi1[:, 1] = np.exp(-self.yhat_zeppelin)
         return self.exp_phi1

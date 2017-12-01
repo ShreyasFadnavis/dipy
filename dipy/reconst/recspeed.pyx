@@ -619,18 +619,18 @@ def argmax_from_countarrs(cnp.ndarray vals,
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def func_mul(x, am2, small_delta, big_delta, summ_rows):
-    fast_func_mul(x, am2, small_delta, big_delta, summ_rows)
+def func_mul(x, am2, small_delta, big_delta, D_intra, summ_rows):
+    fast_func_mul(x, am2, small_delta, big_delta, D_intra, summ_rows)
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.cdivision(True)
-cdef double fast_func_mul(double [:] x, double [:] am2, double [:] small_delta, double [:] big_delta, double [:] summ_rows) nogil:
+cdef double fast_func_mul(double [:] x, double [:] am2, double [:] small_delta, double [:] big_delta, double D_intra, double [:] summ_rows) nogil:
     cdef cnp.npy_intp M = am2.shape[0]
     cdef double sd, bd, am, D_intra_am, x2
     cdef cnp.npy_intp i, j
     cdef cnp.npy_intp K = small_delta.shape[0]
-    cdef double D_intra = 0.6 * 10 ** 3
+#    cdef double D_intra = 1.7 * 10 ** 3
     cdef double num
     cdef double * idenom = <double *> calloc(M, sizeof(double))
 
@@ -672,18 +672,18 @@ cdef double fast_func_bvec(double [:, :] bvecs, double [:] n, double [:] g_per) 
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def S2(x2, bvals, bvecs, yhat_zeppelin):
-    fast_S2(x2, bvals, bvecs, yhat_zeppelin)
+def S2(x2, bvals, bvecs, D_intra, yhat_zeppelin):
+    fast_S2(x2, bvals, bvecs, D_intra, yhat_zeppelin)
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.cdivision(True)
-cdef double fast_S2(double [:] x2, double [:] bvals, double [:, :] bvecs, double [:] yhat_zeppelin) nogil:
+cdef double fast_S2(double [:] x2, double [:] bvals, double [:, :] bvecs, double D_intra, double [:] yhat_zeppelin) nogil:
     cdef cnp.npy_intp i
     cdef double x2_0, x2_1, x2_2, sinT, cosT, sinP, cosP
     cdef double n[3]
     cdef cnp.npy_intp M = bvecs.shape[0]
-    cdef double D_intra = 0.6 * 10 ** 3
+#    cdef double D_intra = 1.7 * 10 ** 3
 
     x2_0 = x2[0]
     x2_1 = x2[1]
@@ -703,23 +703,23 @@ cdef double fast_S2(double [:] x2, double [:] bvals, double [:, :] bvecs, double
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def S2_new(x_fe, bvals, bvecs, yhat_zeppelin):
-    fast_S2_new(x_fe, bvals, bvecs, yhat_zeppelin)
+def S2_new(x, fe, bvals, bvecs, D_intra, yhat_zeppelin):
+    fast_S2_new(x, fe, bvals, bvecs, D_intra, yhat_zeppelin)
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.cdivision(True)
-cdef double fast_S2_new(double [:] x_fe, double [:] bvals, double [:, :] bvecs, double[:] yhat_zeppelin) nogil:
+cdef double fast_S2_new(double [:] x, double [:] fe, double [:] bvals, double [:, :] bvecs, double D_intra, double[:] yhat_zeppelin) nogil:
     cdef cnp.npy_intp i
     cdef double x_0, x_1, fe0,  sinT, cosT, sinP, cosP, D_v, fe1
     cdef double n[3]
     cdef cnp.npy_intp M = bvals.shape[0]
-    cdef double D_intra = 600
+#    cdef double D_intra = 1.7 * 10 ** 3
 
-    fe1 = x_fe[1]
-    fe0 = x_fe[0]
-    x_0 = x_fe[3]
-    x_1 = x_fe[4]
+    fe1 = fe[1]
+    fe0 = fe[0]
+    x_0 = x[0]
+    x_1 = x[1]
     sinT = sin(x_0)
     cosT = cos(x_0)
     sinP = sin(x_1)
@@ -739,18 +739,18 @@ cdef double fast_S2_new(double [:] x_fe, double [:] bvals, double [:, :] bvecs, 
 @cython.profile(True)
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def S1(x1, am1, bvecs, bvals, small_delta, big_delta, G2, L, yhat_cylinder):
-    fast_S1(x1, am1, bvecs, bvals, small_delta, big_delta, G2, L, yhat_cylinder)
+def S1(x1, am1, bvecs, bvals, small_delta, big_delta, G2, L, D_intra, yhat_cylinder):
+    fast_S1(x1, am1, bvecs, bvals, small_delta, big_delta, G2, L, D_intra, yhat_cylinder)
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.cdivision(True)
-cdef double fast_S1(double [:] x1, double[:] am1, double [:, :] bvecs, double [:] bvals, double [:] small_delta, double [:] big_delta, double [:] G2, double [:] L, double [:] yhat_cylinder) nogil:
+cdef double fast_S1(double [:] x1, double[:] am1, double [:, :] bvecs, double [:] bvals, double [:] small_delta, double [:] big_delta, double [:] G2, double [:] L, double D_intra, double [:] yhat_cylinder) nogil:
     cdef double x1_0, x1_1, am, g_per, sd, bd, D_intra_am, x2, num, sinT, cosT, sinP, cosP
     cdef cnp.npy_intp i, j
     cdef double n[3]
     cdef cnp.npy_intp K = small_delta.shape[0]
-    cdef double D_intra = 0.6 * 10 ** 3
+#    cdef double D_intra = 1.7 * 10 ** 3
     cdef double gamma = 2.675987 * 10 ** 8
     cdef cnp.npy_intp M = am1.shape[0]
 
@@ -811,13 +811,13 @@ cdef inline double sd_bd_num(double sd, double bd) nogil:
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def Phi(x, am1, bvecs, bvals, small_delta, big_delta, G2, L, exp_phi1):
-    fast_Phi(x, am1, bvecs, bvals, small_delta, big_delta, G2, L, exp_phi1)
+def Phi(x, am1, bvecs, bvals, small_delta, big_delta, G2, L, D_intra, exp_phi1):
+    fast_Phi(x, am1, bvecs, bvals, small_delta, big_delta, G2, L, D_intra, exp_phi1)
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.cdivision(True)
-cdef double fast_Phi(double [:] x, double[:] am1, double [:, :] bvecs, double [:] bvals, double [:] small_delta, double [:] big_delta, double [:] G2, double [:] L, double [:, :] exp_phi1) nogil:
+cdef double fast_Phi(double [:] x, double[:] am1, double [:, :] bvecs, double [:] bvals, double [:] small_delta, double [:] big_delta, double [:] G2, double [:] L, double D_intra, double [:, :] exp_phi1) nogil:
     cdef double x1_0, x1_1, am, g_per, sd, bd, D_intra_am, x1_2, num, x2_0, x2_1, x2_2, sinT, cosT, sinP, cosP
     cdef cnp.npy_intp i, j
     cdef double n1[3]
@@ -825,7 +825,7 @@ cdef double fast_Phi(double [:] x, double[:] am1, double [:, :] bvecs, double [:
     cdef double x1[3]
     cdef double x2[3]
     cdef cnp.npy_intp K = small_delta.shape[0]
-    cdef double D_intra = 0.6 * 10 ** 3
+#    cdef double D_intra = 1.7 * 10 ** 3
     cdef double gamma = 2.675987 * 10 ** 8
     cdef cnp.npy_intp M = am1.shape[0]
 
@@ -903,20 +903,20 @@ cdef double fast_Phi(double [:] x, double[:] am1, double [:, :] bvecs, double [:
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def Phi2(x_fe, am1, bvecs, bvals, small_delta, big_delta, G2, L, exp_phi1):
-    fast_Phi2(x_fe, am1, bvecs, bvals, small_delta, big_delta, G2, L, exp_phi1)
+def Phi2(x_fe, am1, bvecs, bvals, small_delta, big_delta, G2, L, D_intra, exp_phi1):
+    fast_Phi2(x_fe, am1, bvecs, bvals, small_delta, big_delta, G2, L, D_intra, exp_phi1)
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.cdivision(True)
-cdef double fast_Phi2(double [:] x_fe, double[:] am1, double [:, :] bvecs, double [:] bvals, double [:] small_delta, double [:] big_delta, double [:] G2, double [:] L, double [:, :] exp_phi1) nogil:
+cdef double fast_Phi2(double [:] x_fe, double[:] am1, double [:, :] bvecs, double [:] bvals, double [:] small_delta, double [:] big_delta, double [:] G2, double [:] L, double D_intra, double [:, :] exp_phi1) nogil:
     cdef double x1_0, x1_1, am, g_per, sd, bd, D_intra_am, x1_2, num, x_0, x_1, fe0, fe1, cosT, sinT, cosP, sinP
     cdef cnp.npy_intp i, j
     cdef double n1[3]
     cdef double n2[3]
     cdef double x1[3]
     cdef cnp.npy_intp K = small_delta.shape[0]
-    cdef double D_intra = 0.6 * 10 ** 3
+#    cdef double D_intra = 1.7 * 10 ** 3
     cdef double gamma = 2.675987 * 10 ** 8
     cdef cnp.npy_intp M = am1.shape[0]
 
