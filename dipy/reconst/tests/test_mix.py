@@ -124,11 +124,11 @@ def test_activax_exvivo_model():
     assert_almost_equal(exp_phi[6, 3], 1)
 
 
-def test_estimate_x_and_f():
+def test_nls_cost_func():
     x_fe = np.array([0.44623926,  0.2855913,  0.15918695,  2.68329756,
                      2.89085876, 3.40398589,  0.10898249])
     x_fe = np.squeeze(x_fe)
-    cost = mix.estimate_x_and_f(x_fe, signal_param)
+    cost = mix.nls_cost_func(x_fe, signal_param)
     """
     assert_array_equal()
     [0.00039828375771280502]
@@ -158,7 +158,7 @@ def test_final():
                      2.89085876, 3.40398589,  0.10898249])
     bounds = ([0.01, 0.01,  0.01, 0.01, 0.01, 0.1, 0.01], [0.9,  0.9,  0.9,
               np.pi, np.pi, 11, 0.9])
-    res = least_squares(mix.estimate_x_and_f, x_fe, bounds=(bounds),
+    res = least_squares(mix.nls_cost_func, x_fe, bounds=(bounds),
                         args=(signal_param,))
 
     """

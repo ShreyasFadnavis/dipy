@@ -6,7 +6,9 @@ import numpy as np
 from scipy.optimize import least_squares
 import cvxpy as cvx
 # from dipy.data import get_data
-from scipy.optimize import differential_evolution
+from scipy.optimize import differential_evolution, minimize
+import scipy
+
 
 gamma = 2.675987 * 10 ** 8
 D_intra = 0.6 * 10 ** 3
@@ -76,9 +78,9 @@ def activax_exvivo_compartments(x, bvals, bvecs, G, small_delta, big_delta,
 
     # Cylinder
     L = bvals * D_intra
-    print(L)
-    print(bvecs.shape)
-    print(n.shape)
+#    print(L)
+#    print(bvecs.shape)
+#    print(n.shape)
     L1 = L * np.dot(bvecs, n) ** 2
     am = np.array([1.84118307861360, 5.33144196877749,
                    8.53631578218074, 11.7060038949077,
@@ -246,12 +248,12 @@ def activax_exvivo_compartments2(x_fe, bvals, bvecs, G, small_delta, big_delta,
 
     Notes
     --------
-    The estimated dMRI normalized signal S𝐴𝑐𝑡𝑖𝑣𝑒𝐴𝑥 is assumed to be
+    The estimated dMRI normalized signal SActiveAx is assumed to be
     coming from the following four compartments:
 
     .. math::
 
-        S𝐴𝑐𝑡𝑖𝑣𝑒𝐴𝑥 = {f1}{exp(-yhat_cylinder)}+
+        SActiveAx = {f1}{exp(-yhat_cylinder)}+
                     {f2}{exp(-yhat_zeppelin)}+
                     {f3}{exp(-yhat_ball)}+
                     {f4}{exp(-yhat_dot)}
@@ -268,9 +270,9 @@ def activax_exvivo_compartments2(x_fe, bvals, bvecs, G, small_delta, big_delta,
 
     # Cylinder
     L = bvals * D_intra
-    print(L)
-    print(bvecs.shape)
-    print(n.shape)
+#    print(L)
+#    print(bvecs.shape)
+#    print(n.shape)
     L1 = L * np.dot(bvecs, n) ** 2
     am = np.array([1.84118307861360, 5.33144196877749,
                    8.53631578218074, 11.7060038949077,
@@ -442,7 +444,7 @@ def activeax_cost_one(phi, signal):  # sigma
     return np.dot((signal - yhat).T, signal - yhat)
 
 
-def cost_one(x, signal, bvals, bvecs, G, small_delta, big_delta):
+def stoc_search_cost_func(x, signal, bvals, bvecs, G, small_delta, big_delta):
     phi = activax_exvivo_model(x, bvals, bvecs, G,
                                small_delta, big_delta)
 
@@ -515,10 +517,18 @@ def dif_evol(signal, bvals, bvecs, G, small_delta, big_delta):
     """
 
     bounds = [(0.01, np.pi), (0.01, np.pi), (0.1, 11), (0.1, 0.8)]
-    res_one = differential_evolution(cost_one, bounds, args=(signal, bvals,
+#    res_one = differential_evolution(stoc_search_cost_func, bounds, args=(signal, bvals,
+#                                                             bvecs, G,
+#                                                             small_delta,
+#                                                             big_delta))
+#
+
+    res_one = scipy.optimize.minimize(stoc_search_cost_func, bounds, args=(signal, bvals,
                                                              bvecs, G,
                                                              small_delta,
-                                                             big_delta))
+                                                             big_delta), method='Powell', tol=None, callback=None, options={'disp': False, 'return_all': False, 'maxiter': None, 'direc': None, 'func': None, 'maxfev': None, 'xtol': 0.0001, 'ftol': 0.0001})
+
+
     return res_one.x
 
 
@@ -570,7 +580,7 @@ def estimate_f(signal, phi):
     return np.array(fe.value)
 
 
-def estimate_x_and_f(x_fe, signal_param):
+def nls_cost_func(x_fe, signal_param):
 
     """
     Aax_exvivo_eval
@@ -663,6 +673,6 @@ def final(signal, x, fe):
     x_fe[6] = fe[3]
     bounds = ([0.01, 0.01,  0.01, 0.01, 0.01, 0.1, 0.01], [0.9,  0.9,  0.9,
               np.pi, np.pi, 11, 0.9])
-    res = least_squares(estimate_x_and_f, x_fe, bounds=(bounds),
+    res = least_squares(nls_cost_func, x_fe, bounds=(bounds),
                         args=(signal,))
     return res
