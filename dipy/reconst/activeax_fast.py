@@ -85,6 +85,7 @@ class ActiveAxModel(ReconstModel):
 #        algorithm 1000 default, 1
         self.xtol = 1e-8  # Tolerance for termination, nonlinear least square
 #        1e-8 default, 1e-3
+        self.D_intra = D_intra
         self.gtab = gtab
         self.big_delta = gtab.big_delta
         self.small_delta = gtab.small_delta
@@ -296,9 +297,9 @@ class ActiveAxModel(ReconstModel):
 
     def Phi(self, x):
         x1, self.x2 = self.x_to_xs(x)
-        S2(self.x2, self.gtab.bvals, self.gtab.bvecs, self.yhat_zeppelin)
+        S2(self.x2, self.gtab.bvals, self.gtab.bvecs, self.D_intra, self.yhat_zeppelin)
         S1(x1, am, self.gtab.bvecs, self.gtab.bvals, self.small_delta,
-           self.big_delta, self.G2, self.L, self.yhat_cylinder)
+           self.big_delta, self.G2, self.L, self.D_intra, self.yhat_cylinder)
         self.exp_phi1[:, 0] = np.exp(-self.yhat_cylinder)
         self.exp_phi1[:, 1] = np.exp(-self.yhat_zeppelin)
         return self.exp_phi1
@@ -306,9 +307,9 @@ class ActiveAxModel(ReconstModel):
     def Phi2(self, x_fe):
         x, fe = self.x_fe_to_x_and_fe(x_fe)
         x1 = x[0:3]
-        S2_new(x_fe, self.gtab.bvals,  self.gtab.bvecs, self.yhat_zeppelin)
+        S2_new(x_fe, self.gtab.bvals,  self.gtab.bvecs, self.D_intra, self.yhat_zeppelin)
         S1(x1, am, self.gtab.bvecs, self.gtab.bvals, self.gtab.small_delta,
-           self.gtab.big_delta, self.G2, self.L, self.yhat_cylinder)
+           self.gtab.big_delta, self.G2, self.L, self.D_intra, self.yhat_cylinder)
         self.exp_phi1[:, 0] = np.exp(-self.yhat_cylinder)
         self.exp_phi1[:, 1] = np.exp(-self.yhat_zeppelin)
         return self.exp_phi1
