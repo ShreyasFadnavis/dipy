@@ -36,7 +36,7 @@ gtab = gradient_table(bvals, bvecs, big_delta=big_delta,
                       b0_threshold=0, atol=1e-2)
 # signal_param = mix.make_signal_param(signal, bvals, bvecs, G, small_delta,
 #                                     big_delta)
-am = np.array([1.84118307861360])
+#am = np.array([1.84118307861360])
 
 
 def norm_meas_Aax(signal):
