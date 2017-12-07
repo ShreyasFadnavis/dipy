@@ -56,9 +56,6 @@ bvals = bvals
 gtab = gradient_table(bvals, bvecs, big_delta=big_delta,
                       small_delta=small_delta,
                       b0_threshold=0, atol=1e-2)
-# signal_param = mix.make_signal_param(signal, bvals, bvecs, G, small_delta,
-#                                     big_delta)
-#am = np.array([1.84118307861360])
 
 
 def norm_meas_HCP(ydatam, b):
@@ -95,11 +92,12 @@ DI2 = np.zeros((Y.shape[0], Y.shape[1], 1))
 #mask[0:127, :] = mask[128:0:-1, :]
 
 t1 = time()
-for i in range(Y.shape[0]):
-    for j in range(Y.shape[1]):
+for i in range(65, 85):  #(Y.shape[0]):
+    for j in range(75, 95):  #(Y.shape[1]):
         for k in range(1):
-            if mask[i, j, k] > 0:
+            if mask[i, j, 31] > 0:
                 signal = np.array(Y[i, j])
+                signal = np.squeeze(signal)
                 signal = norm_meas_HCP(signal, bvals)
                 signal = np.float64(signal)
                 signal[signal > 1] = 1

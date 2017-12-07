@@ -82,8 +82,6 @@ def norm_meas_HCP(ydatam, b):
 #    y[C] = 1
     return y
 
-maskdata, mask = median_otsu(data, 3, 1, False,
-                             vol_idx=range(10, 50), dilate=2)
 #Y = data[:, :, 31, :]
 #mask = mask[:, :, 31]
 
@@ -143,8 +141,8 @@ activeax_fit = np.zeros((Y.shape[0], Y.shape[1], 1, 11))
 #mask[0:127, :] = mask[128:0:-1, :]
 
 t1 = time()
-for i in range(60, 80):  #(Y.shape[0]):
-    for j in range(70, 90):  #range(70, 90):  #(Y.shape[1]):
+for i in range(65, 85):  #(Y.shape[0]):
+    for j in range(75, 95):  #(Y.shape[1]):
         for k in range(1):
             if mask[i, j, 31] > 0:
                 signal = np.squeeze(np.array(Y[i, j]))
@@ -175,17 +173,17 @@ print(fast_time)
 
 
 affine = img.affine.copy()
-nib.save(nib.Nifti1Image(activeax_fit[:, :, :, 0], affine), 'f11_in_vivo_3comp_activeax_crossing_CSD_whole_slice.nii.gz')
-nib.save(nib.Nifti1Image(activeax_fit[:, :, :, 1], affine), 'f12_in_vivo_3comp_activeax_crossing_CSD_whole_slice.nii.gz')
-nib.save(nib.Nifti1Image(activeax_fit[:, :, :, 2], affine), 'theta1_in_vivo_3comp_activeax_crossing_CSD_whole_slice.nii.gz')
-nib.save(nib.Nifti1Image(activeax_fit[:, :, :, 3], affine), 'phi1_in_vivo_3comp_activeax_crossing_CSD_whole_slice.nii.gz')
-nib.save(nib.Nifti1Image(activeax_fit[:, :, :, 4], affine), 'R1_in_vivo_3comp_activeax_crossing_CSD_whole_slice.nii.gz')
-nib.save(nib.Nifti1Image(activeax_fit[:, :, :, 5], affine), 'f21_in_vivo_3comp_activeax_crossing_CSD_whole_slice.nii.gz')
-nib.save(nib.Nifti1Image(activeax_fit[:, :, :, 6], affine), 'f22_in_vivo_3comp_activeax_crossing_CSD_whole_slice.nii.gz')
-nib.save(nib.Nifti1Image(activeax_fit[:, :, :, 7], affine), 'f3_in_vivo_3comp_activeax_crossing_CSD_whole_slice.nii.gz')
-nib.save(nib.Nifti1Image(activeax_fit[:, :, :, 8], affine), 'theta2_in_vivo_3comp_activeax_crossing_CSD_whole_slice.nii.gz')
-nib.save(nib.Nifti1Image(activeax_fit[:, :, :, 9], affine), 'phi2_in_vivo_3comp_activeax_crossing_CSD_whole_slice.nii.gz')
-nib.save(nib.Nifti1Image(activeax_fit[:, :, :, 10], affine), 'R2_in_vivo_3comp_activeax_crossing_CSD_whole_slice.nii.gz')
+nib.save(nib.Nifti1Image(activeax_fit[:, :, :, 0], affine), 'f11_in_vivo_3comp_activeax_crossing_CSD_ROI.nii.gz')
+nib.save(nib.Nifti1Image(activeax_fit[:, :, :, 1], affine), 'f12_in_vivo_3comp_activeax_crossing_CSD_ROI.nii.gz')
+nib.save(nib.Nifti1Image(activeax_fit[:, :, :, 2], affine), 'theta1_in_vivo_3comp_activeax_crossing_CSD_ROI.nii.gz')
+nib.save(nib.Nifti1Image(activeax_fit[:, :, :, 3], affine), 'phi1_in_vivo_3comp_activeax_crossing_CSD_ROI.nii.gz')
+nib.save(nib.Nifti1Image(activeax_fit[:, :, :, 4], affine), 'R1_in_vivo_3comp_activeax_crossing_CSD_ROI.nii.gz')
+nib.save(nib.Nifti1Image(activeax_fit[:, :, :, 5], affine), 'f21_in_vivo_3comp_activeax_crossing_CSD_ROI.nii.gz')
+nib.save(nib.Nifti1Image(activeax_fit[:, :, :, 6], affine), 'f22_in_vivo_3comp_activeax_crossing_CSD_ROI.nii.gz')
+nib.save(nib.Nifti1Image(activeax_fit[:, :, :, 7], affine), 'f3_in_vivo_3comp_activeax_crossing_CSD_ROI.nii.gz')
+nib.save(nib.Nifti1Image(activeax_fit[:, :, :, 8], affine), 'theta2_in_vivo_3comp_activeax_crossing_CSD_ROI.nii.gz')
+nib.save(nib.Nifti1Image(activeax_fit[:, :, :, 9], affine), 'phi2_in_vivo_3comp_activeax_crossing_CSD_ROI.nii.gz')
+nib.save(nib.Nifti1Image(activeax_fit[:, :, :, 10], affine), 'R2_in_vivo_3comp_activeax_crossing_CSD_ROI.nii.gz')
 #t2 = time()
 #fast_time = t2 - t1
 #print(fast_time)

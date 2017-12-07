@@ -1,23 +1,13 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Fri Jun 16 16:14:07 2017
-
-@author: Maryam
-"""
-
-
-# -*- coding: utf-8 -*-
 from time import time
 import numpy as np
 import nibabel as nib
 from dipy.core.gradients import gradient_table
 from dipy.data import get_data
-import dipy.reconst.activeax as activeax
+# import dipy.reconst.activeax as activeax
 import dipy.reconst.activeax_fast as activeax_fast
-from dipy.sims.phantom import add_noise
-from scipy.linalg import get_blas_funcs
-gemm = get_blas_funcs("gemm")
-#t1 = time()
+# from dipy.sims.phantom import add_noise
+
 fname, fscanner = get_data('ActiveAx_synth_2d')
 params = np.loadtxt(fscanner)
 img = nib.load(fname)
@@ -27,16 +17,16 @@ bvecs = params[:, 0:3]
 G = params[:, 3] / 10 ** 6  # gradient strength
 big_delta = params[:, 4]
 small_delta = params[:, 5]
-#te = params[:, 6]
+# te = params[:, 6]
 gamma = 2.675987 * 10 ** 8
 bvals = gamma ** 2 * G ** 2 * small_delta ** 2 * (big_delta - small_delta / 3.)
 bvals = bvals
 gtab = gradient_table(bvals, bvecs, big_delta=big_delta,
                       small_delta=small_delta,
                       b0_threshold=0, atol=1e-2)
-# signal_param = mix.make_signal_param(signal, bvals, bvecs, G, small_delta,
-#                                     big_delta)
-#am = np.array([1.84118307861360])
+
+D_intra = 0.6 * 10 ** 3
+D_iso = 2 * 10 ** 3
 
 
 def norm_meas_Aax(signal):
@@ -57,7 +47,7 @@ def norm_meas_Aax(signal):
     return f
 
 fit_method = 'MIX'
-activeax_model = activeax_fast.ActiveAxModel(gtab, params, fit_method=fit_method)
+activeax_model = activeax_fast.ActiveAxModel(gtab, params, D_intra, D_iso, fit_method=fit_method)
 #activeax_model = activeax.ActiveAxModel(gtab, fit_method=fit_method)
 activeax_fit = np.zeros((10, 10, 7))
 t1 = time()
@@ -84,4 +74,3 @@ print(activeax_fit[0, 0])
 #t2 = time()
 #fast_time = t2 - t1
 #print(fast_time)
-
