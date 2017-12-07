@@ -262,7 +262,6 @@ class ActiveAxModel(ReconstModel):
             x_fe(3) theta
             x_fe(4) phi
             x_fe(5) R
-            x_fe(6) as f4
 
         signal_param : array
             signal_param.shape = number of data points x 7

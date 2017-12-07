@@ -140,12 +140,32 @@ class ActiveAxModel(ReconstModel):
                                 xtol=self.xtol, args=(data,))
             result = np.zeros(11)
             result[0] = res.x[0]
+            result[1] = res.x[1]
             result[2] = res.x[3]
             result[3] = res.x[4]
             result[4] = res.x[5]
-            result[5] = res.x[1]
-            result[7] = res.x[2]
-
+            result[5] = res.x[2]
+        """
+        x_fe(0) x_fe(1) x_fe(2)  are f1 f2 f3
+            x_fe(3) theta
+            x_fe(4) phi
+            x_fe(5) R
+            
+            
+            
+             x_fe : array
+            x_fe(0) x_fe(1)  are f1 f2 
+            x_fe(2) theta1
+            x_fe(3) phi1
+            x_fe(4) R1
+            x_fe(5) f3
+            x_fe(6) f4
+            x_fe(7) f5
+            x_fe(8) theta2
+            x_fe(9) phi2
+            x_fe(10) R2
+            
+        """
 #            result = res.x
 
         if self.num_peaks > 1:
@@ -287,7 +307,6 @@ class ActiveAxModel(ReconstModel):
         f1 = fe[0]
         f2 = fe[1]
         f3 = fe[2]
-        f4 = fe[3]
 
         Notes
         --------
@@ -379,7 +398,6 @@ class ActiveAxModel(ReconstModel):
             x_fe(3) theta
             x_fe(4) phi
             x_fe(5) R
-            x_fe(6) as f4
 
         signal_param : array
             signal_param.shape = number of data points x 7
@@ -412,11 +430,16 @@ class ActiveAxModel(ReconstModel):
         Parameters
         ----------
         x_fe : array
-            x_fe(0) x_fe(1) x_fe(2)  are f1 f2 f3
-            x_fe(3) theta
-            x_fe(4) phi
-            x_fe(5) R
-            x_fe(6) as f4
+            x_fe(0) x_fe(1)  are f1 f2 
+            x_fe(2) theta1
+            x_fe(3) phi1
+            x_fe(4) R1
+            x_fe(5) f3
+            x_fe(6) f4
+            x_fe(7) f5
+            x_fe(8) theta2
+            x_fe(9) phi2
+            x_fe(10) R2
 
         signal_param : array
             signal_param.shape = number of data points x 7
