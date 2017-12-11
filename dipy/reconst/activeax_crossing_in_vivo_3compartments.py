@@ -327,7 +327,6 @@ class ActiveAxModel(ReconstModel):
         fe = np.zeros((1, 5))
         fe = fe[0]
         fe[:2] = x_fe[:2]
-#        fe[3] = x_fe[6]
         x[0:3] = x_fe[2:5]
         fe[2:5] = x_fe[5:8]
         x[3:6] = x_fe[8:11]
@@ -340,7 +339,6 @@ class ActiveAxModel(ReconstModel):
         x_fe[2:5] = x[:3]
         x_fe[5:8] = fe[2:5]
         x_fe[8:11] = x[4:7]
-#        x_fe[6] = fe[3]
         return x_fe
 
     def Phi(self, x):
