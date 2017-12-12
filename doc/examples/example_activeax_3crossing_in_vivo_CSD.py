@@ -186,6 +186,10 @@ nib.save(nib.Nifti1Image(activeax_fit[:, :, :, 7], affine), 'f3_in_vivo_3comp_ac
 nib.save(nib.Nifti1Image(activeax_fit[:, :, :, 8], affine), 'theta2_in_vivo_3comp_activeax_crossing_CSD_ROI.nii.gz')
 nib.save(nib.Nifti1Image(activeax_fit[:, :, :, 9], affine), 'phi2_in_vivo_3comp_activeax_crossing_CSD_ROI.nii.gz')
 nib.save(nib.Nifti1Image(activeax_fit[:, :, :, 10], affine), 'R2_in_vivo_3comp_activeax_crossing_CSD_ROI.nii.gz')
+
+nib.save(nib.Nifti1Image(phi_angle[:, :, :, :], affine), 'activeax_phi_angle.nii.gz')
+nib.save(nib.Nifti1Image(theta_angle[:, :, :, :], affine), 'activeax_theta_angle.nii.gz')
+
 #t2 = time()
 #fast_time = t2 - t1
 #print(fast_time)

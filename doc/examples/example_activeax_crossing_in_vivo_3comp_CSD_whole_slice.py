@@ -60,10 +60,6 @@ bvals = bvals
 gtab = gradient_table(bvals, bvecs, big_delta=big_delta,
                       small_delta=small_delta,
                       b0_threshold=0, atol=1e-2)
-# signal_param = mix.make_signal_param(signal, bvals, bvecs, G, small_delta,
-#                                     big_delta)
-#am = np.array([1.84118307861360])
-
 
 def norm_meas_HCP(ydatam, b):
 
@@ -81,9 +77,6 @@ def norm_meas_HCP(ydatam, b):
 #    sigma = np.std(b_zero_all1)
 #    y[C] = 1
     return y
-
-#Y = data[:, :, 31, :]
-#mask = mask[:, :, 31]
 
 response, ratio = auto_response(gtab, data[:, :, 31:32, :], roi_radius=10, fa_thr=0.7)
 csd_model = ConstrainedSphericalDeconvModel(gtab, response)
@@ -121,24 +114,9 @@ for i, j, k in ndindex((data.shape[0], data.shape[1], 1)):
                 n = n + 1
                 num_peaks[i, j, k] = n
 
-
-
-#fname = get_data('mask_CC_in_vivo')
-#img = nib.load(fname)
-#mask = img.get_data()
 fit_method = 'MIX'
-#activeax_model = activeax_crossing_in_vivo_3compartments_CSD.ActiveAxModel(gtab, params,
-#                                                                  D_intra,
-#                                                                  D_iso,
-#                                                                  theta_angle[i, j, k],
-#                                                                  phi_angle[i, j, k],
-#                                                                  num_peaks[i, j, k],
-#                                                                  fit_method=fit_method)
-#activeax_model = activeax_crossing_in_vivo.ActiveAxModel(gtab, params, D_intra, D_iso, fit_method=fit_method)
 Y = data[:, :, 31:32, :]
 activeax_fit = np.zeros((Y.shape[0], Y.shape[1], 1, 11))
-#activeax_model = activeax_crossing_in_vivo_3compartments.ActiveAxModel(gtab, params, D_intra, D_iso, fit_method=fit_method)
-#mask[0:127, :] = mask[128:0:-1, :]
 
 t1 = time()
 for i in range(65, 85):  #(Y.shape[0]):
@@ -149,7 +127,6 @@ for i in range(65, 85):  #(Y.shape[0]):
                 signal = norm_meas_HCP(signal, bvals)
                 signal = np.float64(signal)
                 signal[signal > 1] = 1
-#               signal_n = add_noise(signal, snr=20, noise_type='rician')
                 activeax_model = activeax_crossing_in_vivo_3compartments_CSD.ActiveAxModel(gtab, params,
                                                                   D_intra,
                                                                   D_iso,
@@ -168,9 +145,6 @@ for i in range(65, 85):  #(Y.shape[0]):
 t2 = time()
 fast_time = t2 - t1
 print(fast_time)
-#print(activeax_fit[0, 0])
-
-
 
 affine = img.affine.copy()
 nib.save(nib.Nifti1Image(activeax_fit[:, :, :, 0], affine), 'f11_in_vivo_3comp_activeax_crossing_CSD_ROI.nii.gz')
@@ -184,9 +158,7 @@ nib.save(nib.Nifti1Image(activeax_fit[:, :, :, 7], affine), 'f3_in_vivo_3comp_ac
 nib.save(nib.Nifti1Image(activeax_fit[:, :, :, 8], affine), 'theta2_in_vivo_3comp_activeax_crossing_CSD_ROI.nii.gz')
 nib.save(nib.Nifti1Image(activeax_fit[:, :, :, 9], affine), 'phi2_in_vivo_3comp_activeax_crossing_CSD_ROI.nii.gz')
 nib.save(nib.Nifti1Image(activeax_fit[:, :, :, 10], affine), 'R2_in_vivo_3comp_activeax_crossing_CSD_ROI.nii.gz')
-#t2 = time()
-#fast_time = t2 - t1
-#print(fast_time)
+
 #plt.imshow(data[:, :, 0], cmap='autumn', vmin=0, vmax=8); colorbar()
 
 #import matplotlib.pyplot as plt

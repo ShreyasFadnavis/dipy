@@ -4,24 +4,15 @@ Created on Sat Dec 09 11:40:51 2017
 
 @author: Maryam
 """
-
-# -*- coding: utf-8 -*-
-"""
-Created on Tue Nov 14 15:09:50 2017
-
-@author: mafzalid
-"""
-
 from dipy.reconst.base import ReconstModel
 import numpy as np
 import cvxpy as cvx
 from scipy.optimize import least_squares
 from scipy.optimize import differential_evolution
-from dipy.reconst.recspeed import S1, S2, S2_new
 
 class IVIMModel(ReconstModel):
 
-    def __init__(self, gtab, fit_method='MIX'):
+    def __init__(self, bvals, fit_method='MIX'):
         r""" MIX framework (MIX) [1]_.
 
         The MIX computes the ActiveAx parameters. ActiveAx is a multi
@@ -57,9 +48,7 @@ class IVIMModel(ReconstModel):
 #        algorithm 1000 default, 1
         self.xtol = 1e-8  # Tolerance for termination, nonlinear least square
 #        1e-8 default, 1e-3
-        self.gtab = gtab
-        self.bvals = self.gtab.bvals / (10 ** 6)
-        self.bveca = self.gtab.bvecs
+        self.bvals = bvals 
         self.yhat_perfusion = np.zeros(self.bvals.shape[0])
         self.yhat_diffusion = np.zeros(self.bvals.shape[0])
         self.exp_phi1 = np.zeros((self.bvals.shape[0], 2))
@@ -71,16 +60,18 @@ class IVIMModel(ReconstModel):
         ----------
         data : array
             The measured signal from one voxel.
+            f<0.3
+            D*<0.05 mm^2/s
 
         """
-        bounds = np.array([(0.01, 10 ** 4), (0.01, 10 ** 3)])
+        bounds = np.array([(0.0031, 0.019), (2 * 10 ** (-6), 0.0029)])
         res_one = differential_evolution(self.stoc_search_cost, bounds,
                                          maxiter=self.maxiter, args=(data,))
         x = res_one.x
         phi = self.Phi(x)
         fe = self.cvx_fit(data, phi)
         x_fe = self.x_and_fe_to_x_fe(x, fe)
-        bounds = ([0.01, 0, 0], [0.9, 10 ** 4,  10 ** 3])
+        bounds = ([0.01, 0.003, 1 * 10 ** (-6)], [0.3, 0.02,  0.003])
         res = least_squares(self.nlls_cost, x_fe, bounds=(bounds),
                             xtol=self.xtol, args=(data,))
         result = res.x
@@ -185,7 +176,7 @@ class IVIMModel(ReconstModel):
         constraints = [cvx.sum_entries(fe) == 1,
                        fe[0] >= 0.011,
                        fe[1] >= 0.011,
-                       fe[0] <= 0.89,
+                       fe[0] <= 0.29,
                        fe[1] <= 0.89]
 
         # Form objective.
@@ -252,11 +243,3 @@ class IVIMModel(ReconstModel):
         self.exp_phi1[:, 0] = np.exp(-self.yhat_perfusion)
         self.exp_phi1[:, 1] = np.exp(-self.yhat_diffusion)
         return self.exp_phi1
-
-#    def Phi2(self, x_fe):
-#        x, fe = self.x_fe_to_x_and_fe(x_fe)
-#        self.exp_phi1[:, 0] = np.exp(-self.yhat_perfusion)
-#        self.exp_phi1[:, 1] = np.exp(-self.yhat_diffusion)
-#        return self.exp_phi1
-
-

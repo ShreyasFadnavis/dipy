@@ -10,7 +10,6 @@ import numpy as np
 import nibabel as nib
 from dipy.core.gradients import gradient_table
 from dipy.data import get_data
-# import dipy.reconst.activeax as activeax
 import dipy.reconst.activeax_crossing_in_vivo_3compartments as \
     activeax_crossing_in_vivo_3compartments
 from scipy.linalg import get_blas_funcs

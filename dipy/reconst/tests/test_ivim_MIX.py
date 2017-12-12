@@ -93,14 +93,14 @@ signal = norm_meas_HCP(signal, bvals)
 signal = np.float64(signal)
 signal[signal > 1] = 1
 
-bounds = np.array([(0.01, 10 ** 4), (0.01, 10 ** 3)])
+bounds = np.array([(0.9*10**3, 4.99 * 10 ** 4), (0.01, 2.99 * 10 ** 3)])
 res_one = differential_evolution(ivim_model.stoc_search_cost, bounds,
                                          maxiter=ivim_model.maxiter, args=(signal,))
 x = res_one.x
 phi = ivim_model.Phi(x)
 fe = ivim_model.cvx_fit(signal, phi)
 x_fe = ivim_model.x_and_fe_to_x_fe(x, fe)
-bounds = ([0.01, 0, 0], [0.9, 10 ** 4,  10 ** 3])
+bounds = ([0.01, 10 ** 3, 0], [0.3, 5 * 10 ** 4,  3 * 10 ** 3])
 res = least_squares(ivim_model.nlls_cost, x_fe, bounds=(bounds),
                             xtol=ivim_model.xtol, args=(signal,))
 result = res.x

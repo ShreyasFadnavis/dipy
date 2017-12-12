@@ -328,6 +328,13 @@ def get_data(name='small_64D'):
     if name == 'mask_CC_in_vivo':
         fimg = pjoin(DATA_DIR, 'mask_CC_in_vivo.hdr')
         return fimg
+    if name == 'ivim_mix':
+        fimg = pjoin(DATA_DIR, 'ep2d_advdiff_IVIM_topup.nii')
+        fbvals = pjoin(DATA_DIR, 'ep2d_advdiff_IVIM_avg.bval') 
+        return fimg, fbvals
+    if name == 'mask_ivim':
+        fimg = pjoin(DATA_DIR, 'brain_mask.nii')
+        return fimg
 
 def _gradient_from_file(filename):
     """Reads a gradient file saved as a text file compatible with np.loadtxt
