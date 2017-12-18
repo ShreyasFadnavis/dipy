@@ -180,8 +180,10 @@ t1 = time()
 for i in range(data_slice.shape[0]):
     for j in range(data_slice.shape[1]):
         signal = np.squeeze(data_slice[i, j])
-        if mask[i,j,11] > 0 and signal[0] > signal[1]: 
-            signal = norm_meas_ivim(signal, bvals)
+#        if mask[i,j,11] > 0 and signal[0] > signal[1]:
+        if mask[i,j,11] > 0:
+            signal = signal/max(signal)
+#            signal = norm_meas_ivim(signal, bvals)
             mask2[i, j] = 1
             signal = np.float64(signal)
             signal[signal > 1] = 1
@@ -193,11 +195,11 @@ fast_time = t2 - t1
 print(fast_time)
 
 affine = img.affine.copy()
-nib.save(nib.Nifti1Image(ivim_fit[:, :, 0], affine), 'f_ivim.nii.gz')
-nib.save(nib.Nifti1Image(ivim_fit[:, :, 1], affine), 'D_star_ivim.nii.gz')
-nib.save(nib.Nifti1Image(ivim_fit[:, :, 2], affine), 'D_ivim.nii.gz')
-nib.save(nib.Nifti1Image(ivim_fit[:, :, 0]*ivim_fit[:, :, 1], affine), 'fD_ivim.nii.gz')
-nib.save(nib.Nifti1Image(mask2, affine), 'mask2_ivim.nii.gz')
+nib.save(nib.Nifti1Image(ivim_fit[:, :, 0], affine), 'f_ivim005.nii.gz')
+nib.save(nib.Nifti1Image(ivim_fit[:, :, 1], affine), 'D_star_ivim005.nii.gz')
+nib.save(nib.Nifti1Image(ivim_fit[:, :, 2], affine), 'D_ivim005.nii.gz')
+nib.save(nib.Nifti1Image(ivim_fit[:, :, 0]*ivim_fit[:, :, 1], affine), 'fD_star_ivim005.nii.gz')
+#nib.save(nib.Nifti1Image(mask2, affine), 'mask2_ivim.nii.gz')
 
 #ivimfit = ivimmodel.fit(data_slice)
 
