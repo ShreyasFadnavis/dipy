@@ -20,7 +20,6 @@ small_delta = params[:, 5]
 # te = params[:, 6]
 gamma = 2.675987 * 10 ** 8
 bvals = gamma ** 2 * G ** 2 * small_delta ** 2 * (big_delta - small_delta / 3.)
-bvals = bvals
 gtab = gradient_table(bvals, bvecs, big_delta=big_delta,
                       small_delta=small_delta,
                       b0_threshold=0, atol=1e-2)
