@@ -37,6 +37,7 @@ import matplotlib.pyplot as plt
 
 from dipy.reconst.ivim import IvimModel
 from dipy.data.fetcher import read_ivim
+from dipy.segment.mask import median_otsu
 
 """
 We get an IVIM dataset using Dipy's data fetcher ``read_ivim``.
@@ -133,8 +134,10 @@ ivimmodel = IvimModel(gtab)
 """
 To fit the model, call the `fit` method and pass the data for fitting.
 """
-
-ivimfit = ivimmodel.fit(data_slice)
+data_slice = data[:,:, z, :]
+maskdata, mask = median_otsu(data, 3, 1, False, vol_idx=range(10, 16),
+                             dilate=2)
+ivimfit = ivimmodel.fit(data_slice, mask[:,:,z])
 
 """
 The fit method creates a IvimFit object which contains the
@@ -224,6 +227,12 @@ plot_map(ivimfit.perfusion_fraction, "f", (0, 1), "perfusion_fraction.png")
 plot_map(ivimfit.D_star, "D*", (0, 0.01), "perfusion_coeff.png")
 plot_map(ivimfit.D, "D", (0, 0.001), "diffusion_coeff.png")
 
+affine = img.affine.copy()
+import nibabel as nib
+nib.save(nib.Nifti1Image(ivimfit.perfusion_fraction, affine), 'f_ivim_dipy2.nii.gz')
+nib.save(nib.Nifti1Image(ivimfit.D_star, affine), 'D_star_ivim_dipy2.nii.gz')
+nib.save(nib.Nifti1Image(ivimfit.D, affine), 'D_ivim_dipy2.nii.gz')
+nib.save(nib.Nifti1Image(ivimfit.perfusion_fraction*ivimfit.D_star, affine), 'fD_star_ivim_dipy2.nii.gz')
 """
 .. figure:: predicted_S0.png
    :align: center

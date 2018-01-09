@@ -76,38 +76,12 @@ def norm_meas_HCP(ydatam, b):
     y = ydatam / b_zero_norm
     return y
 
-#response, ratio = auto_response(gtab, data[:, :, 31:32, :], roi_radius=10, fa_thr=0.7)
-#csd_model = ConstrainedSphericalDeconvModel(gtab, response)
-#
-#sphere = get_sphere('repulsion724')
+
 maskdata, mask = median_otsu(data, 3, 1, False,
                              vol_idx=range(10, 50), dilate=2)
-#csd_peaks = peaks_from_model(model=csd_model,
-#                             data=data[:, :, 31:32, :],
-#                             sphere=sphere,
-#                             mask=mask[:, :, 31:32],
-#                             relative_peak_threshold=.5,
-#                             min_separation_angle=25,
-#                             parallel=True)
 
 
-#theta_angle = np.zeros((data.shape[0], data.shape[1], 1, 5))
-#phi_angle = np.zeros((data.shape[0], data.shape[1], 1, 5))
-#num_peaks = np.zeros((data.shape[0], data.shape[1], 1))
-
-#for i, j, k in ndindex((data.shape[0], data.shape[1], 1)):
-#    if mask[i, j, 31] > 0:
-#        n = 0
-#        for m in range(5):
-#            x = np.squeeze(csd_peaks.peak_dirs[i, j, k, m, 0])
-#            y = np.squeeze(csd_peaks.peak_dirs[i, j, k, m, 1])
-#            z = np.squeeze(csd_peaks.peak_dirs[i, j, k, m, 2])
-#            if (x**2 + y**2 + z**2) > 0:
-#                r, theta_angle[i, j, k, m], phi_angle[i, j, k, m] = cart2sphere(x, y, z)
-#                n = n + 1
-#                num_peaks[i, j, k] = n
-
-
+# three crossings
 i = 65
 j = 83
 k = 0

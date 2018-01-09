@@ -335,7 +335,12 @@ def get_data(name='small_64D'):
     if name == 'mask_ivim':
         fimg = pjoin(DATA_DIR, 'brain_mask.nii')
         return fimg
-
+    
+    if name == 'ZCDx_synth_data':
+        fimg = pjoin(DATA_DIR, 'ZCDx_synth_data.nii')
+        scheme = pjoin(DATA_DIR, 'scheme_wmm.txt')
+        return fimg, scheme
+    
 def _gradient_from_file(filename):
     """Reads a gradient file saved as a text file compatible with np.loadtxt
     and saved in the dipy data directory"""

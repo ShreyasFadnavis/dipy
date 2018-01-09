@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sat Dec 09 12:32:23 2017
+Created on Mon Dec 18 13:21:06 2017
 
-@author: Maryam
+@author: mafzalid
 """
 
 """
@@ -41,12 +41,12 @@ diffusion coefficients. First, we import all relevant modules:
 """
 
 import matplotlib.pyplot as plt
-import dipy.reconst.ivim_MIX as ivim_MIX
-from dipy.data.fetcher import read_ivim
+from dipy.reconst.ivim import IvimModel
 import numpy as np
 import nibabel as nib
-from time import time
-from dipy.segment.mask import median_otsu
+from dipy.core.gradients import gradient_table
+from dipy.data import get_data
+import numpy.matlib
 
 """
 We get an IVIM dataset using Dipy's data fetcher ``read_ivim``.
@@ -58,7 +58,22 @@ of b-values. In order to use this model the data should contain signals
 measured at 0 bvalue.
 """
 
-img, gtab = read_ivim()
+fname, fscanner = get_data('ivim_mix')
+bvals = np.loadtxt(fscanner)
+bvals[bvals == 5] = 0
+img = nib.load(fname)
+data = img.get_data()
+data = np.float64(data)
+
+fname = get_data('mask_ivim')
+img = nib.load(fname)
+mask = img.get_data()
+
+a = np.array([1, 0, 0])
+bvecs = np.matlib.repmat(a.T, bvals.shape[0], 1)
+gtab = gradient_table(bvals, bvecs)
+
+#img, gtab = read_ivim()
 
 """
 The variable ``img`` contains a ``nibabel`` NIfTI image object (with the data)
@@ -67,7 +82,6 @@ the gradients e.g. b-values and b-vectors). We get the
 data from img using ``read_data``.
 """
 
-data = img.get_data()
 print('data.shape (%d, %d, %d, %d)' % data.shape)
 
 """
@@ -76,7 +90,7 @@ dimension corresponds to the b-values in the gtab. Let us visualize the data
 by taking a slice midway(z=33) at $\mathbf{b} = 0$.
 """
 
-z = 33
+z = 8
 b = 0
 
 plt.imshow(data[:, :, z, b].T, origin='lower', cmap='gray',
@@ -100,14 +114,14 @@ and CSF. That should give us some contrast to see the values varying across
 the regions.
 """
 
-x1, x2 = 90, 155
-y1, y2 = 90, 170
-data_slice = data[x1:x2, y1:y2, z, :]
-
-plt.imshow(data[x1:x2, y1:y2, z, b].T, origin='lower',
-           cmap="gray", interpolation='nearest')
-plt.savefig("CSF_slice.png")
-plt.close()
+#x1, x2 = 90, 155
+#y1, y2 = 90, 170
+#data_slice = data[x1:x2, y1:y2, z, :]
+#
+#plt.imshow(data[x1:x2, y1:y2, z, b].T, origin='lower',
+#           cmap="gray", interpolation='nearest')
+#plt.savefig("CSF_slice.png")
+#plt.close()
 
 """
 .. figure:: CSF_slice.png
@@ -138,57 +152,24 @@ the fitting results might at times return values which do not make sense
 physically. (For example a negative $\mathbf{f}$)
 """
 
-
-def norm_meas_HCP(ydatam, b):
-
-    """
-    calculates std of the b0 measurements and normalizes all ydatam
-    """
-    b1 = np.where(b > 1e-5)
-    b2 = range(b.shape[0])
-    C = np.setdiff1d(b2, b1)
-    b_zero_all = ydatam[C]
-#    %sigma = std(b_zero_all, 1)
-    b_zero_norm = sum(b_zero_all) / C.shape[0]
-    y = ydatam / b_zero_norm
-#    b_zero_all1 = y[C]
-#    sigma = np.std(b_zero_all1)
-#    y[C] = 1
-    return y
-
-fit_method = 'MIX'
-bvals = gtab.bvals
-
-ivim_model = ivim_MIX.IVIMModel(bvals, fit_method=fit_method)
+ivimmodel = IvimModel(gtab)
 
 """
 To fit the model, call the `fit` method and pass the data for fitting.
 """
-maskdata, mask = median_otsu(data, 3, 1, False, vol_idx=range(10, 16),
-                             dilate=2)
-data_slice = data[:,:, z, :]
-ivim_fit = np.zeros((data_slice.shape[0], data_slice.shape[1], 3))
-t1 = time()
-for i in range(data_slice.shape[0]):
-    for j in range(data_slice.shape[1]):
-        if mask[i,j,z] > 0:
-            signal = np.squeeze(data_slice[i, j])
-            signal = norm_meas_HCP(signal, bvals)
-            signal = np.float64(signal)
-            signal[signal > 1] = 1
-            ivim_fit[i, j, :] = ivim_model.fit(signal)
-            print(i)
-t2 = time()
-fast_time = t2 - t1
-print(fast_time)
 
-affine = img.affine.copy()
-nib.save(nib.Nifti1Image(ivim_fit[:, :, 0], affine), 'f_ivim.nii.gz')
-nib.save(nib.Nifti1Image(ivim_fit[:, :, 1], affine), 'D_star_ivim.nii.gz')
-nib.save(nib.Nifti1Image(ivim_fit[:, :, 2], affine), 'D_ivim.nii.gz')
-nib.save(nib.Nifti1Image(ivim_fit[:, :, 0]*ivim_fit[:, :, 1], affine), 'fD_star_ivim.nii.gz')
+data_slice = data[:,:,11,:]
+#signal = np.zeros(data_slice.shape)
+#for i in range(data_slice.shape[0]):
+#    for j in range(data_slice.shape[1]):
+#        signal[i,j,:] = np.squeeze(data_slice[i, j])
+#        if mask[i,j,11] > 0:
+#            signal[i,j,:] = signal[i,j,:]/max(signal[i,j,:])
+#            signal[i,j,:] = np.float64(signal[i,j,:])
+#            signal[signal > 1] = 1
+#            print(i)
 
-#ivimfit = ivimmodel.fit(data_slice)
+ivimfit = ivimmodel.fit(data_slice, mask[:,:,11])
 
 """
 The fit method creates a IvimFit object which contains the
@@ -200,8 +181,8 @@ corresponding to the model parameters according to the following
 order : $\mathbf{S_{0}, f, D^*, D}$.
 """
 
-#ivimparams = ivimfit.model_params
-#print("ivimparams.shape : {}".format(ivimparams.shape))
+ivimparams = ivimfit.model_params
+print("ivimparams.shape : {}".format(ivimparams.shape))
 
 """
 As we see, we have a 20x20 slice at the height z = 33. Thus we
@@ -214,33 +195,33 @@ which is 33 units above.
 
 """
 
-#i, j = 10, 10
-#estimated_params = ivimfit.model_params[i, j, :]
-#print(estimated_params)
+i, j = 10, 10
+estimated_params = ivimfit.model_params[i, j, :]
+print(estimated_params)
 
 """
 Next, we plot the results relative to the model fit.
 For this we will use the `predict` method of the IvimFit object
 to get the estimated signal.
 """
-#
-#estimated_signal = ivimfit.predict(gtab)[i, j, :]
-#
-#plt.scatter(gtab.bvals, data_slice[i, j, :],
-#            color="green", label="Actual signal")
-#plt.plot(gtab.bvals, estimated_signal, color="red", label="Estimated Signal")
-#plt.xlabel("bvalues")
-#plt.ylabel("Signals")
-#
-#S0_est, f_est, D_star_est, D_est = estimated_params
-#text_fit = """Estimated \n S0={:06.3f} f={:06.4f}\n
-#            D*={:06.5f} D={:06.5f}""".format(S0_est, f_est, D_star_est, D_est)
-#
-#plt.text(0.65, 0.50, text_fit, horizontalalignment='center',
-#         verticalalignment='center', transform=plt.gca().transAxes)
-#plt.legend(loc='upper right')
-#plt.savefig("ivim_voxel_plot.png")
-#plt.close()
+
+estimated_signal = ivimfit.predict(gtab)[i, j, :]
+
+plt.scatter(gtab.bvals, data_slice[i, j, :],
+            color="green", label="Actual signal")
+plt.plot(gtab.bvals, estimated_signal, color="red", label="Estimated Signal")
+plt.xlabel("bvalues")
+plt.ylabel("Signals")
+
+S0_est, f_est, D_star_est, D_est = estimated_params
+text_fit = """Estimated \n S0={:06.3f} f={:06.4f}\n
+            D*={:06.5f} D={:06.5f}""".format(S0_est, f_est, D_star_est, D_est)
+
+plt.text(0.65, 0.50, text_fit, horizontalalignment='center',
+         verticalalignment='center', transform=plt.gca().transAxes)
+plt.legend(loc='upper right')
+plt.savefig("ivim_voxel_plot.png")
+plt.close()
 """
 .. figure:: ivim_voxel_plot.png
    :align: center
@@ -259,24 +240,30 @@ the plot.
 """
 
 
-#def plot_map(raw_data, variable, limits, filename):
-#    lower, upper = limits
-#    plt.title('Map for {}'.format(variable))
-#    plt.imshow(raw_data.T, origin='lower', clim=(lower, upper),
-#               cmap="gray", interpolation='nearest')
-#    plt.colorbar()
-#    plt.savefig(filename)
-#    plt.close()
+def plot_map(raw_data, variable, limits, filename):
+    lower, upper = limits
+    plt.title('Map for {}'.format(variable))
+    plt.imshow(raw_data.T, origin='lower', clim=(lower, upper),
+               cmap="gray", interpolation='nearest')
+    plt.colorbar()
+    plt.savefig(filename)
+    plt.close()
 
 """
 Let us get the various plots so that we can visualize them in one page
 """
 
-#plot_map(ivimfit.S0_predicted, "Predicted S0", (0, 10000), "predicted_S0.png")
-#plot_map(data_slice[:, :, 0], "Measured S0", (0, 10000), "measured_S0.png")
-#plot_map(ivimfit.perfusion_fraction, "f", (0, 1), "perfusion_fraction.png")
-#plot_map(ivimfit.D_star, "D*", (0, 0.01), "perfusion_coeff.png")
-#plot_map(ivimfit.D, "D", (0, 0.001), "diffusion_coeff.png")
+plot_map(ivimfit.S0_predicted, "Predicted S0", (0, 10000), "predicted_S0.png")
+plot_map(data_slice[:, :, 0], "Measured S0", (0, 10000), "measured_S0.png")
+plot_map(ivimfit.perfusion_fraction, "f", (0, 1), "perfusion_fraction.png")
+plot_map(ivimfit.D_star, "D*", (0, 0.01), "perfusion_coeff.png")
+plot_map(ivimfit.D, "D", (0, 0.001), "diffusion_coeff.png")
+
+affine = img.affine.copy()
+nib.save(nib.Nifti1Image(ivimfit.perfusion_fraction*mask[:,:,11], affine), 'f_ivim_dipy.nii.gz')
+nib.save(nib.Nifti1Image(ivimfit.D_star*mask[:,:,11], affine), 'D_star_ivim_dipy.nii.gz')
+nib.save(nib.Nifti1Image(ivimfit.D*mask[:,:,11], affine), 'D_ivim_dipy.nii.gz')
+nib.save(nib.Nifti1Image(ivimfit.perfusion_fraction*ivimfit.D_star*mask[:,:,11], affine), 'fD_star_ivim_dipy.nii.gz')
 
 """
 .. figure:: predicted_S0.png

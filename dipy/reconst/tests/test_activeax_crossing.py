@@ -13,9 +13,12 @@ from scipy.optimize import differential_evolution
 #import dipy.reconst.activeax_crossing_in_vivo_3compartments as \
 #    activeax_crossing_in_vivo_3compartments
 #import dipy.reconst.activeax_crossing_in_vivo as activeax_crossing_in_vivo
-import dipy.reconst.activeax_in_vivo_3compartments_CSD as \
-    activeax_in_vivo_3compartments_CSD
-from scipy.linalg import get_blas_funcs
+#import dipy.reconst.activeax_in_vivo_3compartments_CSD as \
+#    activeax_in_vivo_3compartments_CSD
+
+import dipy.reconst.activeax_3crossing_in_vivo_CSD as \
+    activeax_3crossing_in_vivo_CSD
+    
 from scipy.optimize import least_squares
 from dipy.reconst.csdeconv import (ConstrainedSphericalDeconvModel,
                                    auto_response)
@@ -85,27 +88,27 @@ def norm_meas_HCP(ydatam, b):
     return y
 
 
-def num_of_dir(gtab, signal):
-    response, ratio = auto_response(gtab, signal, roi_radius=10,
-                                    fa_thr=0.7)
-    csd_model = ConstrainedSphericalDeconvModel(gtab, response)
-    sphere = get_sphere('repulsion724')
-    csd_peaks = peaks_from_model(model=csd_model, data=signal,
-                                 sphere=sphere, mask=None,
-                                 relative_peak_threshold=.5,
-                                 min_separation_angle=25, parallel=True)
-    theta_angle = np.zeros(5)
-    phi_angle = np.zeros(5)
-    n = 0
-    for m in range(5):
-        x = np.squeeze(csd_peaks.peak_dirs[m, 0])
-        y = np.squeeze(csd_peaks.peak_dirs[m, 1])
-        z = np.squeeze(csd_peaks.peak_dirs[m, 2])
-        if (x**2 + y**2 + z**2) > 0:
-            r, theta_angle[m], phi_angle[m] = cart2sphere(x, y, z)
-            n = n + 1
-            num_peaks = n
-    return theta_angle, phi_angle, num_peaks
+#def num_of_dir(gtab, signal):
+#    response, ratio = auto_response(gtab, signal, roi_radius=10,
+#                                    fa_thr=0.7)
+#    csd_model = ConstrainedSphericalDeconvModel(gtab, response)
+#    sphere = get_sphere('repulsion724')
+#    csd_peaks = peaks_from_model(model=csd_model, data=signal,
+#                                 sphere=sphere, mask=None,
+#                                 relative_peak_threshold=.5,
+#                                 min_separation_angle=25, parallel=True)
+#    theta_angle = np.zeros(5)
+#    phi_angle = np.zeros(5)
+#    n = 0
+#    for m in range(5):
+#        x = np.squeeze(csd_peaks.peak_dirs[m, 0])
+#        y = np.squeeze(csd_peaks.peak_dirs[m, 1])
+#        z = np.squeeze(csd_peaks.peak_dirs[m, 2])
+#        if (x**2 + y**2 + z**2) > 0:
+#            r, theta_angle[m], phi_angle[m] = cart2sphere(x, y, z)
+#            n = n + 1
+#            num_peaks = n
+#    return theta_angle, phi_angle, num_peaks
 
 #response, ratio = auto_response(gtab, data[:, :, 31:32, :], roi_radius=10, fa_thr=0.7)
 #csd_model = ConstrainedSphericalDeconvModel(gtab, response)
@@ -151,28 +154,71 @@ for i, j, k in ndindex((data.shape[0], data.shape[1], 1)):
             z = np.squeeze(csd_peaks.peak_dirs[i, j, k, m, 2])
             if (x**2 + y**2 + z**2) > 0:
                 r, theta_angle[i, j, k, m], phi_angle[i, j, k, m] = cart2sphere(x, y, z)
+                phi_angle[i, j, k, m] = phi_angle[i, j, k, m] + np.pi
+                theta_angle[i, j, k, m] = np.pi - theta_angle[i, j, k, m]
+                if phi_angle[i, j, k, m] > np.pi:
+                    phi_angle[i, j, k, m] = phi_angle[i, j, k, m] - np.pi
+                    theta_angle[i, j, k, m] = np.pi - theta_angle[i, j, k, m]
                 n = n + 1
                 num_peaks[i, j, k] = n
 
+# three crossings
+i = 65
+j = 83
+k = 0
 
+# two crossings
 i = 53
 j = 33
 k = 0
 
 fit_method = 'MIX'
-activeax_model = activeax_in_vivo_3compartments_CSD.ActiveAxModel(gtab, params, D_intra, D_iso, theta_angle, phi_angle,
-                 num_peaks, fit_method=fit_method)
+
+activeax_model = activeax_3crossing_in_vivo_CSD.ActiveAxModel(gtab, params,
+                                                                  D_intra,
+                                                                  D_iso,
+                                                                  theta_angle[i, j, k],
+                                                                  phi_angle[i, j, k],
+                                                                  num_peaks[i, j, k],
+                                                                  fit_method=fit_method)
+
+
+
+#activeax_model = activeax_in_vivo_3compartments_CSD.ActiveAxModel(gtab, params, D_intra, D_iso, theta_angle, phi_angle,
+#                 num_peaks, fit_method=fit_method)
 #activeax_model = activeax_crossing_in_vivo.ActiveAxModel(gtab, params, D_intra, D_iso, fit_method=fit_method)
 Y = data[:, :, 31:32, :]
-activeax_fit = np.zeros((Y.shape[0], Y.shape[1], 1, 6))
+activeax_fit = np.zeros((Y.shape[0], Y.shape[1], 1, 16))
 #activeax_fit = np.zeros((Y.shape[0], Y.shape[1], 1, 12))
 
 
-signal = np.array(Y[i, j])
+signal = np.squeeze(Y[i, j])
 signal = norm_meas_HCP(signal, bvals)
 signal = np.float64(signal)
 signal[signal > 1] = 1
 activeax_fit[i, j, k, :] = activeax_model.fit(signal)
+
+bounds = np.array([(0.11, 15.9), (0.11, 0.8), (0.11, 15.9),
+                               (0.11, 0.8), (0.11, 15.9), (0.11, 0.8)])
+res_one = differential_evolution(activeax_model.stoc_search_cost, bounds,
+                                             maxiter=activeax_model.maxiter,
+                                             args=(signal,))
+x = res_one.x
+phi = activeax_model.Phi(x)
+fe = activeax_model.cvx_fit(signal, phi)
+x_fe = activeax_model.x_and_fe_to_x_fe(x, fe)
+bounds = ([0.01, 0.01,  0, 0, 0.1, 0.01,  0.01, 0.01, 0, 0, 0.1,
+                       0.01, 0.01, 0, 0, 0.1], [0.9,  0.9, np.pi, np.pi, 16,
+                                            0.9, 0.9, 0.9, np.pi, np.pi, 16,
+                                            0.9, 0.9, np.pi, np.pi, 16])
+res = least_squares(activeax_model.nlls_cost, x_fe, bounds=(bounds),
+                                xtol=activeax_model.xtol, args=(signal,))
+result = res.x
+
+
+
+
+
 
 bounds = np.array([(0.011, np.pi), (0.011, np.pi), (0.11, 16), (0.11, 0.8),
                    (0.011, np.pi), (0.011, np.pi), (0.11, 16), (0.11, 0.8)])
