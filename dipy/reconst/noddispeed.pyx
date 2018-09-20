@@ -137,5 +137,3 @@ def error_function(double [:] x, double [:] out):
     with nogil:
         for i in range(shape):
             out[i] = erf(x[i])
-
-
