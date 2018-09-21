@@ -73,7 +73,10 @@ for modulename, other_sources, language in (
         ('dipy.reconst.recspeed', [], 'c'),
         ('dipy.reconst.vec_val_sum', [], 'c'),
         ('dipy.reconst.quick_squash', [], 'c'),
+<<<<<<< HEAD
         ('dipy.reconst.noddispeed', [], 'c'),
+=======
+>>>>>>> refs/remotes/origin/nipy-dipy-master
         ('dipy.tracking.distances', [], 'c'),
         ('dipy.tracking.streamlinespeed', [], 'c'),
         ('dipy.tracking.local.localtrack', [], 'c'),
