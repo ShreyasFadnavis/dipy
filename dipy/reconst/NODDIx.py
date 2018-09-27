@@ -6,7 +6,7 @@ import dipy.reconst.noddi_speed as noddixspeed
 from scipy.optimize import least_squares
 from scipy.optimize import differential_evolution
 from scipy import special
- from dipy.reconst.get_peaks import num_peaks_getter
+from dipy.reconst.get_peaks import num_peaks_getter
 
 gamma = 2.675987 * 10 ** 8  # gyromagnetic ratio for Hydrogen
 D_intra = 1.7 * 10 ** 3  # intrinsic free diffusivity
@@ -69,12 +69,16 @@ class NoddixModel(ReconstModel):
         self.G = params[:, 3] / 10 ** 6  # gradient strength (Tesla/micrometer)
         self.yhat_ball = D_iso * self.gtab.bvals
         self.L = self.gtab.bvals * D_intra
-        self.phi_inv = np.zeros((4, 4))
         self.yhat_dot = np.zeros(self.gtab.bvals.shape)
-        self.exp_phi1 = np.zeros((self.gtab.bvals.shape[0], 5))
-        self.exp_phi1[:, 4] = np.exp(-self.yhat_ball)
         self.num_peaks = num_peaks_getter(gtab, data)
-                 
+
+        if num_peaks == 1:
+            self.exp_phi1 = np.zeros((self.gtab.bvals.shape[0], 3))
+            self.exp_phi1[:, 2] = np.exp(-self.yhat_ball)
+
+        if num_peaks == 2:
+            self.exp_phi1 = np.zeros((self.gtab.bvals.shape[0], 5))
+            self.exp_phi1[:, 4] = np.exp(-self.yhat_ball)
 
     @multi_voxel_fit
     def fit(self, data):
@@ -84,31 +88,53 @@ class NoddixModel(ReconstModel):
         The measured signal from one voxel.
 
         """
-        bounds = [(0.011, 0.98), (0.011, np.pi), (0.011, np.pi), (0.11, 1),
-                  (0.011, 0.98), (0.011, np.pi), (0.011, np.pi), (0.11, 1)]
-
-        diff_res = differential_evolution(self.stoc_search_cost, bounds,
-                                          maxiter=self.maxiter, args=(data,),
-                                          tol=0.001, seed=200,
-                                          mutation=(0, 1.05),
-                                          strategy='best1bin',
-                                          disp=False, polish=True, popsize=14)
-
-        # Step 1: store the results of the differential evolution in x
-        x = diff_res.x
-        phi = self.Phi(x)
-        # Step 2: perform convex optimization
-        f = self.cvx_fit(data, phi)
-        # Combine all 13 parameters of the model into a single array
-        x_f = self.x_and_f_to_x_f(x, f)
-
-        bounds = ([0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01,
-                   0.01], [0.9, 0.9, 0.9, 0.9, 0.9, 0.99, np.pi, np.pi, 0.99,
-                           np.pi, np.pi])
-        res = least_squares(self.nlls_cost, x_f, xtol=self.xtol, args=(data,))
-        result = res.x
-        noddix_fit = NoddixFit(self, result)
-        return noddix_fit
+        if num_peaks == 1:
+            bounds = [(0.011, 0.98), (0.011, np.pi), (0.011, np.pi), (0.11, 1)]
+    
+            diff_res = differential_evolution(self.stoc_search_cost, bounds,
+                                              maxiter=self.maxiter,
+                                              args=(data,), tol=0.001, 
+                                              seed=200, mutation=(0, 1.05),
+                                              strategy='best1bin',
+                                              disp=False, polish=True, 
+                                              popsize=14)
+    
+            # Step 1: store the results of the differential evolution in x
+            x = diff_res.x
+            phi = self.Phi(x)
+            # Step 2: perform convex optimization
+            f = self.cvx_fit(data, phi)
+            # Combine all 13 parameters of the model into a single array
+            x_f = self.x_and_f_to_x_f(x, f)        
+            res = least_squares(self.nlls_cost, x_f, xtol=self.xtol, 
+                                args=(data,))
+            result = res.x
+            noddix_fit = NoddixFit(self, result)
+            return noddix_fit
+        
+        if num_peaks == 2:
+            bounds = [(0.011, 0.98), (0.011, np.pi), (0.011, np.pi), (0.11, 1),
+                      (0.011, 0.98), (0.011, np.pi), (0.011, np.pi), (0.11, 1)]
+    
+            diff_res = differential_evolution(self.stoc_search_cost, bounds,
+                                              maxiter=self.maxiter,
+                                              args=(data,), tol=0.001, 
+                                              seed=200, mutation=(0, 1.05),
+                                              strategy='best1bin',
+                                              disp=False, polish=True, 
+                                              popsize=14)
+    
+            # Step 1: store the results of the differential evolution in x
+            x = diff_res.x
+            phi = self.Phi(x)
+            # Step 2: perform convex optimization
+            f = self.cvx_fit(data, phi)
+            # Combine all 13 parameters of the model into a single array
+            x_f = self.x_and_f_to_x_f(x, f)       
+            res = least_squares(self.nlls_cost, x_f, xtol=self.xtol, args=(data,))
+            result = res.x
+            noddix_fit = NoddixFit(self, result)
+            return noddix_fit
 
     def stoc_search_cost(self, x, signal):
         """
@@ -165,17 +191,27 @@ class NoddixModel(ReconstModel):
         # Create 5 scalar optimization variables.
         f = cvx.Variable(5)
         # Create four constraints.
-        constraints = [cvx.sum_entries(f) == 1,
-                       f[0] >= 0.011,
-                       f[1] >= 0.011,
-                       f[2] >= 0.011,
-                       f[3] >= 0.011,
-                       f[4] >= 0.011,
-                       f[0] <= 0.89,
-                       f[1] <= 0.89,
-                       f[2] <= 0.89,
-                       f[3] <= 0.89,
-                       f[4] <= 0.89]
+        if num_peaks == 1:
+            constraints = [cvx.sum_entries(f) == 1,
+                           f[0] >= 0.011,
+                           f[1] >= 0.011,
+                           f[2] >= 0.011,
+                           f[0] <= 0.89,
+                           f[1] <= 0.89,
+                           f[2] <= 0.89]
+                           
+        if num_peaks == 2:
+            constraints = [cvx.sum_entries(f) == 1,
+                           f[0] >= 0.011,
+                           f[1] >= 0.011,
+                           f[2] >= 0.011,
+                           f[3] >= 0.011,
+                           f[4] >= 0.011,
+                           f[0] <= 0.89,
+                           f[1] <= 0.89,
+                           f[2] <= 0.89,
+                           f[3] <= 0.89,
+                           f[4] <= 0.89]
 
         # Form objective.
         obj = cvx.Minimize(cvx.sum_entries(cvx.square(phi * f - signal)))
@@ -217,10 +253,16 @@ class NoddixModel(ReconstModel):
         Constructs the Signal from the intracellular and extracellular compart-
         ments for the Differential Evolution and Variable Separation.
         """
-        self.exp_phi1[:, 0] = self.S_ic1(x)
-        self.exp_phi1[:, 1] = self.S_ec1(x)
-        self.exp_phi1[:, 2] = self.S_ic2(x)
-        self.exp_phi1[:, 3] = self.S_ec2(x)
+        if num_peaks == 1:
+            self.exp_phi1[:, 0] = self.S_ic1(x)
+            self.exp_phi1[:, 1] = self.S_ec1(x)
+        
+        if num_peaks == 2:
+            self.exp_phi1[:, 0] = self.S_ic1(x)
+            self.exp_phi1[:, 1] = self.S_ec1(x)
+            self.exp_phi1[:, 2] = self.S_ic2(x)
+            self.exp_phi1[:, 3] = self.S_ec2(x)
+            
         return self.exp_phi1
 
     def Phi2(self, x_f):
@@ -229,10 +271,17 @@ class NoddixModel(ReconstModel):
         ments: Convex Fitting + NLLS - LM method.
         """
         x, f = self.x_f_to_x_and_f(x_f)
-        self.exp_phi1[:, 0] = self.S_ic1(x)
-        self.exp_phi1[:, 1] = self.S_ec1_new(x, f)
-        self.exp_phi1[:, 2] = self.S_ic2_new(x)
-        self.exp_phi1[:, 3] = self.S_ec2_new(x, f)
+        
+        if num_peaks == 1:
+            self.exp_phi1[:, 0] = self.S_ic1(x)
+            self.exp_phi1[:, 1] = self.S_ec1_new(x, f)
+        
+        if num_peaks == 2:
+            self.exp_phi1[:, 0] = self.S_ic1(x)
+            self.exp_phi1[:, 1] = self.S_ec1_new(x, f)
+            self.exp_phi1[:, 2] = self.S_ic2_new(x)
+            self.exp_phi1[:, 3] = self.S_ec2_new(x, f)
+            
         return self.exp_phi1
 
     def S_ic1(self, x):

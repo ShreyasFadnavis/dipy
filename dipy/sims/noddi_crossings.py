@@ -26,7 +26,7 @@ gtab = gradient_table(bvals, bvecs, big_delta=big_delta,
                       b0_threshold=0, atol=1e-2)
 
 # instantiating the noddixmodel class
-noddix_model = noddix.NoddixModel(gtab, params, fit_method='MIX')
+noddix_model = noddix.NoddixModel(gtab, params, num_peaks, fit_method='MIX')
 
 """
 Declare the parameters
