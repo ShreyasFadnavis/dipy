@@ -6,7 +6,6 @@ import dipy.reconst.noddi_speed as noddixspeed
 from scipy.optimize import least_squares
 from scipy.optimize import differential_evolution
 from scipy import special
-from dipy.reconst.get_peaks import num_peaks_getter
 
 gamma = 2.675987 * 10 ** 8  # gyromagnetic ratio for Hydrogen
 D_intra = 1.7 * 10 ** 3  # intrinsic free diffusivity
@@ -57,7 +56,7 @@ class NoddixModel(ReconstModel):
     The implementation of NODDIx may require CVXPY (http://www.cvxpy.org/).
     """
 
-    def __init__(self, gtab, params, num_peaks, fit_method='MIX'):
+    def __init__(self, gtab, params, num_peaks=2, fit_method='MIX'):
         # The maximum number of generations, genetic algorithm 1000 default, 1
         self.maxiter = 100
         # Tolerance for termination, nonlinear least square 1e-8 default, 1e-3
@@ -70,7 +69,8 @@ class NoddixModel(ReconstModel):
         self.yhat_ball = D_iso * self.gtab.bvals
         self.L = self.gtab.bvals * D_intra
         self.yhat_dot = np.zeros(self.gtab.bvals.shape)
-        self.num_peaks = num_peaks_getter(gtab, data)
+        self.num_peaks = num_peaks
+        
 
         if num_peaks == 1:
             self.exp_phi1 = np.zeros((self.gtab.bvals.shape[0], 3))
@@ -88,8 +88,9 @@ class NoddixModel(ReconstModel):
         The measured signal from one voxel.
 
         """
-        if num_peaks == 1:
-            bounds = [(0.011, 0.98), (0.011, np.pi), (0.011, np.pi), (0.11, 1)]
+        if self.num_peaks == 1:
+            bounds = [(0.011, 0.98), (0.011, np.pi), (0.011, np.pi), (0.11, 1),
+                      (0.011, 0.98)]
     
             diff_res = differential_evolution(self.stoc_search_cost, bounds,
                                               maxiter=self.maxiter,
@@ -112,7 +113,7 @@ class NoddixModel(ReconstModel):
             noddix_fit = NoddixFit(self, result)
             return noddix_fit
         
-        if num_peaks == 2:
+        if self.num_peaks == 2:
             bounds = [(0.011, 0.98), (0.011, np.pi), (0.011, np.pi), (0.11, 1),
                       (0.011, 0.98), (0.011, np.pi), (0.011, np.pi), (0.11, 1)]
     
@@ -187,11 +188,10 @@ class NoddixModel(ReconstModel):
         .. math::
             minimize(norm((signal)- (phi*f)))
         """
-
-        # Create 5 scalar optimization variables.
-        f = cvx.Variable(5)
         # Create four constraints.
-        if num_peaks == 1:
+        if self.num_peaks == 1:
+            # Create 3 scalar optimization variables.
+            f = cvx.Variable(3)
             constraints = [cvx.sum_entries(f) == 1,
                            f[0] >= 0.011,
                            f[1] >= 0.011,
@@ -200,7 +200,9 @@ class NoddixModel(ReconstModel):
                            f[1] <= 0.89,
                            f[2] <= 0.89]
                            
-        if num_peaks == 2:
+        if self.num_peaks == 2:
+            # Create 3 scalar optimization variables.
+            f = cvx.Variable(5)
             constraints = [cvx.sum_entries(f) == 1,
                            f[0] >= 0.011,
                            f[1] >= 0.011,
@@ -253,11 +255,11 @@ class NoddixModel(ReconstModel):
         Constructs the Signal from the intracellular and extracellular compart-
         ments for the Differential Evolution and Variable Separation.
         """
-        if num_peaks == 1:
+        if self.num_peaks == 1:
             self.exp_phi1[:, 0] = self.S_ic1(x)
             self.exp_phi1[:, 1] = self.S_ec1(x)
         
-        if num_peaks == 2:
+        if self.num_peaks == 2:
             self.exp_phi1[:, 0] = self.S_ic1(x)
             self.exp_phi1[:, 1] = self.S_ec1(x)
             self.exp_phi1[:, 2] = self.S_ic2(x)
@@ -272,16 +274,15 @@ class NoddixModel(ReconstModel):
         """
         x, f = self.x_f_to_x_and_f(x_f)
         
-        if num_peaks == 1:
+        if self.num_peaks == 1:
             self.exp_phi1[:, 0] = self.S_ic1(x)
             self.exp_phi1[:, 1] = self.S_ec1_new(x, f)
         
-        if num_peaks == 2:
+        if self.num_peaks == 2:
             self.exp_phi1[:, 0] = self.S_ic1(x)
             self.exp_phi1[:, 1] = self.S_ec1_new(x, f)
             self.exp_phi1[:, 2] = self.S_ic2_new(x)
             self.exp_phi1[:, 3] = self.S_ec2_new(x, f)
-            
         return self.exp_phi1
 
     def S_ic1(self, x):
@@ -711,9 +712,15 @@ class NoddixModel(ReconstModel):
                White Matter Fibers from diffusion MRI." Scientific reports 6
                (2016).
         """
-        f = np.zeros((1, 5))
-        f = x_f[0:5]
-        x = x_f[5:12]
+        if self.num_peaks == 1:
+            f = np.zeros((1, 3))
+            f = x_f[0:3]
+            x = x_f[5:12]
+            
+        if self.num_peaks == 2:
+            f = np.zeros((1, 5))
+            f = x_f[0:5]
+            x = x_f[5:7]
         return x, f
 
     def x_and_f_to_x_f(self, x, f):
@@ -734,17 +741,25 @@ class NoddixModel(ReconstModel):
                (2016).
         """
         x_f = np.zeros(11)
-        f = np.squeeze(f)
-        f11ga = x[3]
-        f12ga = x[7]
-        x_f[0] = (f[0] + f11ga) / 2
-        x_f[1] = f[1]
-        x_f[2] = (f[2] + f12ga) / 2
-        x_f[3:5] = f[3:5]
-        x_f[5:8] = x[0:3]
-        x_f[8:11] = x[4:7]
+        if self.num_peaks == 2:
+            f = np.squeeze(f)
+            f11ga = x[3]
+            x_f[0] = (f[0] + f11ga) / 2
+            x_f[1] = f[1]
+        
+        if self.num_peaks == 2:
+            f = np.squeeze(f)
+            f11ga = x[3]
+            f12ga = x[7]
+            x_f[0] = (f[0] + f11ga) / 2
+            x_f[1] = f[1]
+            x_f[2] = (f[2] + f12ga) / 2
+            x_f[3:5] = f[3:5]
+            x_f[5:8] = x[0:3]
+            x_f[8:11] = x[4:7]
+            
         return x_f
-    
+        
 
 class NoddixFit(ReconstFit):
     """Diffusion data fit to a NODDIx Model"""

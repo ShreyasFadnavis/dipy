@@ -61,4 +61,4 @@ def num_peaks_getter(gtab, data):
     
     peak_counter = np.linalg.norm(csd_peaks.peak_dirs[..., :, :], axis = -1)
     num_peaks = peak_counter.sum(axis = -1)
-    return np.asanyarray(num_peaks)
+    return np.asarray(num_peaks)
