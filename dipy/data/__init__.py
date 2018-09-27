@@ -293,7 +293,6 @@ def get_data(name='small_64D'):
         scheme = pjoin(DATA_DIR, 'HCP_scheme.txt')
         return fimg, scheme
 
-
 def _gradient_from_file(filename):
     """Reads a gradient file saved as a text file compatible with np.loadtxt
     and saved in the dipy data directory"""
