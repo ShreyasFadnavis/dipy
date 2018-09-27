@@ -6,30 +6,11 @@ import dipy.reconst.noddi_speed as noddixspeed
 from scipy.optimize import least_squares
 from scipy.optimize import differential_evolution
 from scipy import special
-from dipy.reconst.get_peaks import num_peaks_getter
+ from dipy.reconst.get_peaks import num_peaks_getter
 
 gamma = 2.675987 * 10 ** 8  # gyromagnetic ratio for Hydrogen
 D_intra = 1.7 * 10 ** 3  # intrinsic free diffusivity
 D_iso = 3 * 10 ** 3  # isotropic diffusivity
-
-
-# experimental
-class NoddixFit(ReconstFit):
-    """Diffusion data fit to a NODDIx Model"""
-
-    def __init__(self, model, coeff):
-        self.volfrac_ic1 = coeff[0]
-        self.volfrac_ec1 = coeff[2]
-        self.theta2 = coeff[9]
-        self.phi2 = coeff[10]        
-        self.volfrac_ic2 = coeff[1]
-        self.volfrac_ec2 = coeff[3]
-        self.theta1 = coeff[6]  
-        self.phi1 = coeff[7]          
-        self.volfrac_csf = coeff[4]
-        self.OD1 = coeff[5]
-        self.OD2 = coeff[8]
-        self.coeff = coeff
 
 
 class NoddixModel(ReconstModel):
@@ -76,7 +57,7 @@ class NoddixModel(ReconstModel):
     The implementation of NODDIx may require CVXPY (http://www.cvxpy.org/).
     """
 
-    def __init__(self, gtab, params, fit_method='MIX'):
+    def __init__(self, gtab, params, num_peaks, fit_method='MIX'):
         # The maximum number of generations, genetic algorithm 1000 default, 1
         self.maxiter = 100
         # Tolerance for termination, nonlinear least square 1e-8 default, 1e-3
@@ -89,11 +70,11 @@ class NoddixModel(ReconstModel):
         self.yhat_ball = D_iso * self.gtab.bvals
         self.L = self.gtab.bvals * D_intra
         self.phi_inv = np.zeros((4, 4))
-        self.yhat_zeppelin = np.zeros(self.gtab.bvals.shape[0])
-        self.yhat_cylinder = np.zeros(self.gtab.bvals.shape[0])
         self.yhat_dot = np.zeros(self.gtab.bvals.shape)
         self.exp_phi1 = np.zeros((self.gtab.bvals.shape[0], 5))
         self.exp_phi1[:, 4] = np.exp(-self.yhat_ball)
+        self.num_peaks = num_peaks_getter(gtab, data)
+                 
 
     @multi_voxel_fit
     def fit(self, data):
@@ -257,7 +238,7 @@ class NoddixModel(ReconstModel):
     def S_ic1(self, x):
         """
         This function models the intracellular component.
-        The intra-cellular compartment refrs to the space bounded by the
+        The intra-cellular compartment refers to the space bounded by the
         membrane of neurites. We model this space as a set of sticks, i.e.,
         cylinders of zero radius, to capture the highly restricted nature of
         diffusion perpendicular to neurites and unhindered diffusion along
@@ -292,6 +273,7 @@ class NoddixModel(ReconstModel):
         but not restricted, hence is modeled with simple (Gaussian)
         anisotropic diffusion.
         (see [2]_ for a comparison and a thorough discussion)
+        
         ----------
         References
         ----------
@@ -324,6 +306,7 @@ class NoddixModel(ReconstModel):
 
         (see Supplimentary note from 6: [1]_ for a comparison and a thorough
         discussion)
+        
         ----------
         References
         ----------
@@ -356,6 +339,7 @@ class NoddixModel(ReconstModel):
 
         (see Supplimentary note 6: [1]_ for a comparison and a thorough
         discussion)
+        
         ----------
         References
         ----------
@@ -471,6 +455,7 @@ class NoddixModel(ReconstModel):
         distribution.  It must be in Cartesian coordinates [x y z]' with size
         [3 1]. [1]_
 
+        ----------
         References
         ----------
         .. [1] Zhang, H. et. al. NeuroImage NODDI : Practical in vivo neurite
@@ -710,3 +695,21 @@ class NoddixModel(ReconstModel):
         x_f[5:8] = x[0:3]
         x_f[8:11] = x[4:7]
         return x_f
+    
+
+class NoddixFit(ReconstFit):
+    """Diffusion data fit to a NODDIx Model"""
+
+    def __init__(self, model, coeff):
+        self.volfrac_ic1 = coeff[0]
+        self.volfrac_ec1 = coeff[2]
+        self.theta2 = coeff[9]
+        self.phi2 = coeff[10]        
+        self.volfrac_ic2 = coeff[1]
+        self.volfrac_ec2 = coeff[3]
+        self.theta1 = coeff[6]  
+        self.phi1 = coeff[7]          
+        self.volfrac_csf = coeff[4]
+        self.OD1 = coeff[5]
+        self.OD2 = coeff[8]
+        self.coeff = coeff
