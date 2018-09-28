@@ -132,7 +132,8 @@ class NoddixModel(ReconstModel):
             f = self.cvx_fit(data, phi)
             # Combine all 13 parameters of the model into a single array
             x_f = self.x_and_f_to_x_f(x, f)       
-            res = least_squares(self.nlls_cost, x_f, xtol=self.xtol, args=(data,))
+            res = least_squares(self.nlls_cost, x_f, xtol=self.xtol, 
+                                args=(data,))
             result = res.x
             noddix_fit = NoddixFit(self, result)
             return noddix_fit
