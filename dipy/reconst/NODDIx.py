@@ -89,8 +89,7 @@ class NoddixModel(ReconstModel):
 
         """
         if self.num_peaks == 1:
-            bounds = [(0.011, 0.98), (0.011, np.pi), (0.011, np.pi), (0.11, 1),
-                      (0.011, 0.98)]
+            bounds = [(0.011, 0.98), (0.011, np.pi), (0.011, np.pi), (0.11, 1)]
     
             diff_res = differential_evolution(self.stoc_search_cost, bounds,
                                               maxiter=self.maxiter,
@@ -100,22 +99,10 @@ class NoddixModel(ReconstModel):
                                               disp=False, polish=True, 
                                               popsize=14)
     
-            # Step 1: store the results of the differential evolution in x
-            x = diff_res.x
-            phi = self.Phi(x)
-            # Step 2: perform convex optimization
-            f = self.cvx_fit(data, phi)
-            # Combine all 13 parameters of the model into a single array
-            x_f = self.x_and_f_to_x_f(x, f)        
-            res = least_squares(self.nlls_cost, x_f, xtol=self.xtol, 
-                                args=(data,))
-            result = res.x
-            noddix_fit = NoddixFit(self, result)
-            return noddix_fit
         
         if self.num_peaks == 2:
-            bounds = [(0.011, 0.98), (0.011, np.pi), (0.011, np.pi), (0.11, 1),
-                      (0.011, 0.98), (0.011, np.pi), (0.011, np.pi), (0.11, 1)]
+            bounds = [(0.0, 0.98), (0.011, np.pi), (0.011, np.pi), (0.0, 1),
+                      (0.0, 0.98), (0.011, np.pi), (0.011, np.pi), (0.0, 1)]
     
             diff_res = differential_evolution(self.stoc_search_cost, bounds,
                                               maxiter=self.maxiter,
@@ -125,18 +112,18 @@ class NoddixModel(ReconstModel):
                                               disp=False, polish=True, 
                                               popsize=14)
     
-            # Step 1: store the results of the differential evolution in x
-            x = diff_res.x
-            phi = self.Phi(x)
-            # Step 2: perform convex optimization
-            f = self.cvx_fit(data, phi)
-            # Combine all 13 parameters of the model into a single array
-            x_f = self.x_and_f_to_x_f(x, f)       
-            res = least_squares(self.nlls_cost, x_f, xtol=self.xtol, 
-                                args=(data,))
-            result = res.x
-            noddix_fit = NoddixFit(self, result)
-            return noddix_fit
+        # Step 1: store the results of the differential evolution in x
+        x = diff_res.x
+        phi = self.Phi(x)
+        # Step 2: perform convex optimization
+        f = self.cvx_fit(data, phi)
+        # Combine all 13 parameters of the model into a single array
+        x_f = self.x_and_f_to_x_f(x, f)       
+        res = least_squares(self.nlls_cost, x_f, xtol=self.xtol, 
+                            args=(data,))
+        result = res.x
+        noddix_fit = NoddixFit(self, result)
+        return noddix_fit
 
     def stoc_search_cost(self, x, signal):
         """
@@ -193,7 +180,7 @@ class NoddixModel(ReconstModel):
         if self.num_peaks == 1:
             # Create 3 scalar optimization variables.
             f = cvx.Variable(3)
-            constraints = [cvx.sum_entries(f) == 1,
+            constraints = [cvx.sum(f) == 1,
                            f[0] >= 0.011,
                            f[1] >= 0.011,
                            f[2] >= 0.011,
@@ -204,7 +191,7 @@ class NoddixModel(ReconstModel):
         if self.num_peaks == 2:
             # Create 3 scalar optimization variables.
             f = cvx.Variable(5)
-            constraints = [cvx.sum_entries(f) == 1,
+            constraints = [cvx.sum(f) == 1,
                            f[0] >= 0.011,
                            f[1] >= 0.011,
                            f[2] >= 0.011,
@@ -217,7 +204,7 @@ class NoddixModel(ReconstModel):
                            f[4] <= 0.89]
 
         # Form objective.
-        obj = cvx.Minimize(cvx.sum_entries(cvx.square(phi * f - signal)))
+        obj = cvx.Minimize(cvx.sum(cvx.square(phi * f - signal)))
 
         # Form and solve problem.
         prob = cvx.Problem(obj, constraints)
@@ -303,15 +290,27 @@ class NoddixModel(ReconstModel):
                NeuroImage, 61(4), 1000–1016.
 
         """
-        OD1 = x[0]
-        sinT1 = np.sin(x[1])
-        cosT1 = np.cos(x[1])
-        sinP1 = np.sin(x[2])
-        cosP1 = np.cos(x[2])
-        n1 = [cosP1*sinT1, sinP1*sinT1, cosT1]
-        kappa1 = 1/np.tan(OD1*np.pi/2)
-        x1 = [D_intra, 0, kappa1]
-        signal_ic1 = self.SynthMeasWatsonSHCylNeuman_PGSE(x1, n1)
+        if self.num_peaks == 1:
+            OD1 = x[0]
+            sinT1 = np.sin(x[1])
+            cosT1 = np.cos(x[1])
+            sinP1 = np.sin(x[2])
+            cosP1 = np.cos(x[2])
+            n1 = [cosP1*sinT1, sinP1*sinT1, cosT1]
+            kappa1 = 1/np.tan(OD1*np.pi/2)
+            x1 = [D_intra, 0, kappa1]
+            signal_ic1 = self.SynthMeasWatsonSHCylNeuman_PGSE(x1, n1)
+            
+        if self.num_peaks == 2:
+            OD1 = x[0]
+            sinT1 = np.sin(x[1])
+            cosT1 = np.cos(x[1])
+            sinP1 = np.sin(x[2])
+            cosP1 = np.cos(x[2])
+            n1 = [cosP1*sinT1, sinP1*sinT1, cosT1]
+            kappa1 = 1/np.tan(OD1*np.pi/2)
+            x1 = [D_intra, 0, kappa1]
+            signal_ic1 = self.SynthMeasWatsonSHCylNeuman_PGSE(x1, n1)
         return signal_ic1
 
     def S_ec1(self, x):
@@ -716,12 +715,12 @@ class NoddixModel(ReconstModel):
         if self.num_peaks == 1:
             f = np.zeros((1, 3))
             f = x_f[0:3]
-            x = x_f[5:12]
+            x = x_f[5:8]
             
         if self.num_peaks == 2:
             f = np.zeros((1, 5))
             f = x_f[0:5]
-            x = x_f[5:7]
+            x = x_f[5:12]
         return x, f
 
     def x_and_f_to_x_f(self, x, f):
@@ -742,22 +741,15 @@ class NoddixModel(ReconstModel):
                (2016).
         """
         x_f = np.zeros(11)
-        if self.num_peaks == 2:
-            f = np.squeeze(f)
-            f11ga = x[3]
-            x_f[0] = (f[0] + f11ga) / 2
-            x_f[1] = f[1]
-        
-        if self.num_peaks == 2:
-            f = np.squeeze(f)
-            f11ga = x[3]
-            f12ga = x[7]
-            x_f[0] = (f[0] + f11ga) / 2
-            x_f[1] = f[1]
-            x_f[2] = (f[2] + f12ga) / 2
-            x_f[3:5] = f[3:5]
-            x_f[5:8] = x[0:3]
-            x_f[8:11] = x[4:7]
+        f = np.squeeze(f)
+        f11ga = x[3]
+        f12ga = x[7]
+        x_f[0] = (f[0] + f11ga) / 2
+        x_f[1] = f[1]
+        x_f[2] = (f[2] + f12ga) / 2
+        x_f[3:5] = f[3:5]
+        x_f[5:8] = x[0:3]
+        x_f[8:11] = x[4:7]
             
         return x_f
         

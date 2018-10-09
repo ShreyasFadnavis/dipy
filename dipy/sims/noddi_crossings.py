@@ -26,36 +26,35 @@ gtab = gradient_table(bvals, bvecs, big_delta=big_delta,
                       b0_threshold=0, atol=1e-2)
 
 # instantiating the noddixmodel class
-noddix_model = noddix.NoddixModel(gtab, params, num_peaks=1, fit_method='MIX')
+noddix_model = noddix.NoddixModel(gtab, params, num_peaks=2, fit_method='MIX')
 
 """
 Declare the parameters
 """
-volfrac_ic1 = 0.2
-volfrac_ec1 = 0.2
+volfrac_ic1 = 0
+volfrac_ec1 = 0.4
 theta2 = 0.01745329  # 1 Degree
 phi2 = 0.01745329  # 1 Degree
 
-volfrac_ic2 = 0.2
-volfrac_ec2 = 0.2
+volfrac_ic2 = 0
+volfrac_ec2 = 0.4
 theta1 = 1.57079633  # 90 Degree
 phi1 = 0.01745329  # 1 Degree
 
 volfrac_csf = 0.2
-OD1 = 0.1
-OD2 = 0.1
-
-"""
-Lets contruct the signal now
-"""
-x_f_sig = np.asarray([volfrac_ic1, volfrac_ic2, volfrac_ec1, volfrac_ec2, 
-                      volfrac_csf, OD1, theta1, phi1, OD2, theta2, phi2])
-
+OD1 = 0.068
+OD2 = 0.068
 
 if noddix_model.num_peaks == 1: 
+#    x_f_sig = np.asarray([volfrac_ic1, volfrac_ec1, volfrac_csf, OD1, theta1, 
+#                          phi1])
+    x_f_sig = np.asarray([volfrac_ic1, volfrac_ic2, volfrac_ec1, volfrac_ec2, 
+                          volfrac_csf, OD1, theta1, phi1, OD2, theta2, phi2])
     f = x_f_sig[0:3]
-
+    
 if noddix_model.num_peaks == 2: 
+    x_f_sig = np.asarray([volfrac_ic1, volfrac_ic2, volfrac_ec1, volfrac_ec2, 
+                          volfrac_csf, OD1, theta1, phi1, OD2, theta2, phi2])
     f = x_f_sig[0:5]
 
 phi = noddix_model.Phi2(x_f_sig)
@@ -114,4 +113,5 @@ def sim_voxel_fit(reconst_signal):
     print('Errors: ', errors_list)
     print('Sum of Errors: ', sum(errors_list))
     return time_noddix
+
 sim_voxel_fit(reconst_signal)
