@@ -97,7 +97,7 @@ class NoddixModel(ReconstModel):
                                               seed=200, mutation=(0, 1.05),
                                               strategy='best1bin',
                                               disp=False, polish=True, 
-                                              popsize=14)
+                                              popsize=30)
     
         
         if self.num_peaks == 2:
@@ -110,7 +110,7 @@ class NoddixModel(ReconstModel):
                                               seed=200, mutation=(0, 1.05),
                                               strategy='best1bin',
                                               disp=False, polish=True, 
-                                              popsize=14)
+                                              popsize=30)
     
         # Step 1: store the results of the differential evolution in x
         x = diff_res.x
@@ -290,27 +290,15 @@ class NoddixModel(ReconstModel):
                NeuroImage, 61(4), 1000–1016.
 
         """
-        if self.num_peaks == 1:
-            OD1 = x[0]
-            sinT1 = np.sin(x[1])
-            cosT1 = np.cos(x[1])
-            sinP1 = np.sin(x[2])
-            cosP1 = np.cos(x[2])
-            n1 = [cosP1*sinT1, sinP1*sinT1, cosT1]
-            kappa1 = 1/np.tan(OD1*np.pi/2)
-            x1 = [D_intra, 0, kappa1]
-            signal_ic1 = self.SynthMeasWatsonSHCylNeuman_PGSE(x1, n1)
-            
-        if self.num_peaks == 2:
-            OD1 = x[0]
-            sinT1 = np.sin(x[1])
-            cosT1 = np.cos(x[1])
-            sinP1 = np.sin(x[2])
-            cosP1 = np.cos(x[2])
-            n1 = [cosP1*sinT1, sinP1*sinT1, cosT1]
-            kappa1 = 1/np.tan(OD1*np.pi/2)
-            x1 = [D_intra, 0, kappa1]
-            signal_ic1 = self.SynthMeasWatsonSHCylNeuman_PGSE(x1, n1)
+        OD1 = x[0]
+        sinT1 = np.sin(x[1])
+        cosT1 = np.cos(x[1])
+        sinP1 = np.sin(x[2])
+        cosP1 = np.cos(x[2])
+        n1 = [cosP1*sinT1, sinP1*sinT1, cosT1]
+        kappa1 = 1/np.tan(OD1*np.pi/2)
+        x1 = [D_intra, 0, kappa1]
+        signal_ic1 = self.SynthMeasWatsonSHCylNeuman_PGSE(x1, n1)
         return signal_ic1
 
     def S_ec1(self, x):
@@ -750,7 +738,6 @@ class NoddixModel(ReconstModel):
         x_f[3:5] = f[3:5]
         x_f[5:8] = x[0:3]
         x_f[8:11] = x[4:7]
-            
         return x_f
         
 
