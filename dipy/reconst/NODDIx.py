@@ -1,4 +1,4 @@
-from dipy.reconst.base import ReconstModel, ReconstFit 
+from dipy.reconst.base import ReconstModel, ReconstFit
 import numpy as np
 import cvxpy as cvx
 from dipy.reconst.multi_voxel import multi_voxel_fit
