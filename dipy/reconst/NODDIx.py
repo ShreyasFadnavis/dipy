@@ -70,7 +70,6 @@ class NoddixModel(ReconstModel):
         self.L = self.gtab.bvals * D_intra
         self.yhat_dot = np.zeros(self.gtab.bvals.shape)
         self.num_peaks = num_peaks
-        
 
         if num_peaks == 1:
             self.exp_phi1 = np.zeros((self.gtab.bvals.shape[0], 3))
@@ -90,37 +89,35 @@ class NoddixModel(ReconstModel):
         """
         if self.num_peaks == 1:
             bounds = [(0.011, 0.98), (0.011, np.pi), (0.011, np.pi), (0.11, 1)]
-    
+
             diff_res = differential_evolution(self.stoc_search_cost, bounds,
                                               maxiter=self.maxiter,
-                                              args=(data,), tol=0.001, 
+                                              args=(data,), tol=0.001,
                                               seed=200, mutation=(0, 1.05),
                                               strategy='best1bin',
-                                              disp=False, polish=True, 
+                                              disp=False, polish=True,
                                               popsize=30)
-    
-        
+
         if self.num_peaks == 2:
             bounds = [(0.0, 0.98), (0.011, np.pi), (0.011, np.pi), (0.0, 1),
                       (0.0, 0.98), (0.011, np.pi), (0.011, np.pi), (0.0, 1)]
-    
+
             diff_res = differential_evolution(self.stoc_search_cost, bounds,
                                               maxiter=self.maxiter,
-                                              args=(data,), tol=0.001, 
+                                              args=(data,), tol=0.001,
                                               seed=200, mutation=(0, 1.05),
                                               strategy='best1bin',
-                                              disp=False, polish=True, 
+                                              disp=False, polish=True,
                                               popsize=30)
-    
+
         # Step 1: store the results of the differential evolution in x
         x = diff_res.x
         phi = self.Phi(x)
         # Step 2: perform convex optimization
         f = self.cvx_fit(data, phi)
         # Combine all 13 parameters of the model into a single array
-        x_f = self.x_and_f_to_x_f(x, f)       
-        res = least_squares(self.nlls_cost, x_f, xtol=self.xtol, 
-                            args=(data,))
+        x_f = self.x_and_f_to_x_f(x, f)
+        res = least_squares(self.nlls_cost, x_f, xtol=self.xtol, args=(data,))
         result = res.x
         noddix_fit = NoddixFit(self, result)
         return noddix_fit
@@ -187,7 +184,7 @@ class NoddixModel(ReconstModel):
                            f[0] <= 0.89,
                            f[1] <= 0.89,
                            f[2] <= 0.89]
-                           
+
         if self.num_peaks == 2:
             # Create 3 scalar optimization variables.
             f = cvx.Variable(5)
@@ -246,13 +243,13 @@ class NoddixModel(ReconstModel):
         if self.num_peaks == 1:
             self.exp_phi1[:, 0] = self.S_ic1(x)
             self.exp_phi1[:, 1] = self.S_ec1(x)
-        
+
         if self.num_peaks == 2:
             self.exp_phi1[:, 0] = self.S_ic1(x)
             self.exp_phi1[:, 1] = self.S_ec1(x)
             self.exp_phi1[:, 2] = self.S_ic2(x)
             self.exp_phi1[:, 3] = self.S_ec2(x)
-            
+
         return self.exp_phi1
 
     def Phi2(self, x_f):
@@ -261,11 +258,11 @@ class NoddixModel(ReconstModel):
         ments: Convex Fitting + NLLS - LM method.
         """
         x, f = self.x_f_to_x_and_f(x_f)
-        
+
         if self.num_peaks == 1:
             self.exp_phi1[:, 0] = self.S_ic1(x)
             self.exp_phi1[:, 1] = self.S_ec1_new(x, f)
-        
+
         if self.num_peaks == 2:
             self.exp_phi1[:, 0] = self.S_ic1(x)
             self.exp_phi1[:, 1] = self.S_ec1_new(x, f)
@@ -311,7 +308,7 @@ class NoddixModel(ReconstModel):
         but not restricted, hence is modeled with simple (Gaussian)
         anisotropic diffusion.
         (see [2]_ for a comparison and a thorough discussion)
-        
+
         ----------
         References
         ----------
@@ -344,7 +341,7 @@ class NoddixModel(ReconstModel):
 
         (see Supplimentary note from 6: [1]_ for a comparison and a thorough
         discussion)
-        
+
         ----------
         References
         ----------
@@ -377,7 +374,7 @@ class NoddixModel(ReconstModel):
 
         (see Supplimentary note 6: [1]_ for a comparison and a thorough
         discussion)
-        
+
         ----------
         References
         ----------
@@ -704,7 +701,7 @@ class NoddixModel(ReconstModel):
             f = np.zeros((1, 3))
             f = x_f[0:3]
             x = x_f[5:8]
-            
+
         if self.num_peaks == 2:
             f = np.zeros((1, 5))
             f = x_f[0:5]
@@ -730,16 +727,20 @@ class NoddixModel(ReconstModel):
         """
         x_f = np.zeros(11)
         f = np.squeeze(f)
-        f11ga = x[3]
-        f12ga = x[7]
-        x_f[0] = (f[0] + f11ga) / 2
-        x_f[1] = f[1]
-        x_f[2] = (f[2] + f12ga) / 2
-        x_f[3:5] = f[3:5]
-        x_f[5:8] = x[0:3]
-        x_f[8:11] = x[4:7]
+        if self.num_peaks == 1:
+            f11ga = x[3]
+            x_f[1] = f[1]
+        if self.num_peaks == 2:
+            f11ga = x[3]
+            f12ga = x[7]
+            x_f[0] = (f[0] + f11ga) / 2
+            x_f[1] = f[1]
+            x_f[2] = (f[2] + f12ga) / 2
+            x_f[3:5] = f[3:5]
+            x_f[5:8] = x[0:3]
+            x_f[8:11] = x[4:7]
         return x_f
-        
+
 
 class NoddixFit(ReconstFit):
     """Diffusion data fit to a NODDIx Model"""
@@ -748,11 +749,11 @@ class NoddixFit(ReconstFit):
         self.volfrac_ic1 = coeff[0]
         self.volfrac_ec1 = coeff[2]
         self.theta2 = coeff[9]
-        self.phi2 = coeff[10]        
+        self.phi2 = coeff[10]
         self.volfrac_ic2 = coeff[1]
         self.volfrac_ec2 = coeff[3]
-        self.theta1 = coeff[6]  
-        self.phi1 = coeff[7]          
+        self.theta1 = coeff[6]
+        self.phi1 = coeff[7]
         self.volfrac_csf = coeff[4]
         self.OD1 = coeff[5]
         self.OD2 = coeff[8]
