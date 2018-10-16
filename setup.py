@@ -71,6 +71,7 @@ for modulename, other_sources, language in (
         ('dipy.direction.bootstrap_direction_getter', [], 'c'),
         ('dipy.reconst.peak_direction_getter', [], 'c'),
         ('dipy.reconst.recspeed', [], 'c'),
+        ('dipy.reconst.recspeed_activeax', [], 'c'),
         ('dipy.reconst.vec_val_sum', [], 'c'),
         ('dipy.reconst.quick_squash', [], 'c'),
         ('dipy.tracking.distances', [], 'c'),
