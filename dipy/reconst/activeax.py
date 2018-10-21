@@ -283,7 +283,8 @@ class ActiveAxModel(ReconstModel):
 
     def x_and_fe_to_x_fe(self, x, fe):
         x_fe = np.zeros(7)
-        fe = fe[:, 0]
+        
+        # fe = fe[:, 0]
         x_fe[:3] = fe[:3]
         x_fe[3:6] = x[:3]
         x_fe[6] = fe[3]
