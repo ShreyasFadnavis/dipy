@@ -296,6 +296,29 @@ def get_data(name='small_64D'):
         fimg = pjoin(DATA_DIR, 'ActiveAx_synth_2d.nii')
         scheme = pjoin(DATA_DIR, 'ActiveAx_synth_scheme.txt')
         return fimg, scheme
+    if name == 'ActiveAx_in_vivo1':
+        fimg = pjoin(DATA_DIR, 'shell1_activeax_in_vivo.nii')
+        scheme = pjoin(DATA_DIR, 'ActiveAx_scheme_in_vivo.txt')
+        return fimg, scheme
+    if name == 'ActiveAx_in_vivo2':
+        fimg = pjoin(DATA_DIR, 'shell2_activeax_in_vivo.nii')
+        return fimg
+    if name == 'ActiveAx_in_vivo3':
+        fimg = pjoin(DATA_DIR, 'shell3_activeax_in_vivo.nii')
+        return fimg
+    if name == 'ActiveAx_in_vivo4':
+        fimg = pjoin(DATA_DIR, 'shell4_activeax_in_vivo.nii')
+        return fimg
+    if name == 'mask_CC_in_vivo':
+        fimg = pjoin(DATA_DIR, 'mask_CC_in_vivo.hdr')
+        return fimg
+    if name == 'ivim_mix':
+        fimg = pjoin(DATA_DIR, 'ep2d_advdiff_IVIM_topup.nii')
+        fbvals = pjoin(DATA_DIR, 'ep2d_advdiff_IVIM_avg.bval')
+        return fimg, fbvals
+    if name == 'mask_ivim':
+        fimg = pjoin(DATA_DIR, 'brain_mask.nii')
+        return fimg
 
 
 def _gradient_from_file(filename):
