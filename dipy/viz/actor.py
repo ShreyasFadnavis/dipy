@@ -1290,7 +1290,7 @@ def point(points, colors, opacity=1., point_radius=0.1, theta=8, phi=8):
     --------
     >>> from dipy.viz import window, actor
     >>> ren = window.Renderer()
-    >>> pts = np.random.rand(5, 3)
+    >>> pts = np.random.rand(1, 3)
     >>> point_actor = actor.point(pts, window.colors.coral)
     >>> ren.add(point_actor)
     >>> # window.show(ren)
@@ -1300,7 +1300,7 @@ def point(points, colors, opacity=1., point_radius=0.1, theta=8, phi=8):
                   theta=theta, phi=phi, vertices=None, faces=None)
 
 
-def sphere(centers, colors, radii=1., theta=16, phi=16,
+def sphere(centers, colors, radii=1., theta=64, phi=64,
            vertices=None, faces=None):
     """ Visualize one or many spheres with different colors and radii
 
@@ -1325,10 +1325,21 @@ def sphere(centers, colors, radii=1., theta=16, phi=16,
     --------
     >>> from dipy.viz import window, actor
     >>> ren = window.Renderer()
-    >>> centers = np.random.rand(5, 3)
+    >>> centers = np.random.rand(1, 3)
     >>> sphere_actor = actor.sphere(centers, window.colors.coral)
     >>> ren.add(sphere_actor)
-    >>> # window.show(ren)
+    >>> window.show(ren)
+    
+    >>> from dipy.viz import window, actor
+    >>> ren = window.Renderer()
+    >>> centers = np.random.rand(1, 3)
+    >>> sphere_actor = actor.sphere(centers, window.colors.coral)
+    >>> sphere_actor1 = actor.sphere(centers, window.colors.coral)
+    >>> sphere_actor.SetOrientation(90, 5, 30)
+    >>> sphere_actor1.SetOrientation(0, 5, 30)
+    >>> ren.add(sphere_actor)
+    >>> ren.add(sphere_actor1)
+    >>> window.show(ren)
     """
 
     if np.array(colors).ndim == 1:
@@ -1349,10 +1360,14 @@ def sphere(centers, colors, radii=1., theta=16, phi=16,
     polydata_sphere = vtk.vtkPolyData()
 
     if faces is None:
-        src = vtk.vtkSphereSource()
-        src.SetRadius(1)
-        src.SetThetaResolution(theta)
-        src.SetPhiResolution(phi)
+        src = vtk.vtkSuperquadricSource()
+#        src.SetPhiRoundness(0)
+#        src.SetThetaRoundness(1)
+#        src.SetThetaResolution(theta)
+#        src.SetPhiResolution(phi)
+#        src.SetThickness(0)
+        src.SetScale(1, 1, 5)
+        src.SetToroidal(0)
 
     else:
 
