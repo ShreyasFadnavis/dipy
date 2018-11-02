@@ -1300,7 +1300,7 @@ def point(points, colors, opacity=1., point_radius=0.1, theta=8, phi=8):
                   theta=theta, phi=phi, vertices=None, faces=None)
 
 
-def sphere(centers, colors, radii=1., theta=64, phi=64,
+def sphere(centers, colors, radii=1., theta=128, phi=128,
            vertices=None, faces=None):
     """ Visualize one or many spheres with different colors and radii
 
@@ -1323,22 +1323,25 @@ def sphere(centers, colors, radii=1., theta=64, phi=64,
 
     Examples
     --------
+    >>> import numpy as np
     >>> from dipy.viz import window, actor
     >>> ren = window.Renderer()
     >>> centers = np.random.rand(1, 3)
-    >>> sphere_actor = actor.sphere(centers, window.colors.coral)
-    >>> ren.add(sphere_actor)
-    >>> window.show(ren)
-    
-    >>> from dipy.viz import window, actor
-    >>> ren = window.Renderer()
-    >>> centers = np.random.rand(1, 3)
-    >>> sphere_actor = actor.sphere(centers, window.colors.coral)
-    >>> sphere_actor1 = actor.sphere(centers, window.colors.coral)
-    >>> sphere_actor.SetOrientation(90, 5, 30)
-    >>> sphere_actor1.SetOrientation(0, 5, 30)
-    >>> ren.add(sphere_actor)
-    >>> ren.add(sphere_actor1)
+    >>> stick1_actor = actor.sphere(centers, window.colors.orange, faces=1)
+    >>> stick2_actor = actor.sphere(centers, window.colors.orange, faces=1)
+#    >>> ellipsoid_actor = actor.sphere(centers, window.colors.yellow_light, faces=2)
+#    >>> ellipsoid2_actor = actor.sphere(centers, window.colors.yellow_light, faces=2)
+    >>> sphere1_actor = actor.sphere(centers, window.colors.yellow_light, faces=3)
+    >>> stick1_actor.SetOrientation(0, 1, 30)
+    >>> stick2_actor.SetOrientation(90, 1, 30)
+#    >>> ellipsoid_actor.SetOrientation(0, 1, 30)
+#    >>> ellipsoid2_actor.SetOrientation(90, 1, 30)
+    >>> sphere1_actor.SetOrientation(0, 1, 30)
+    >>> ren.add(stick1_actor)
+    >>> ren.add(stick2_actor)
+#    >>> ren.add(ellipsoid_actor)
+#    >>> ren.add(ellipsoid2_actor)
+    >>> ren.add(sphere1_actor)
     >>> window.show(ren)
     """
 
@@ -1359,16 +1362,31 @@ def sphere(centers, colors, radii=1., theta=64, phi=64,
     polydata_centers = vtk.vtkPolyData()
     polydata_sphere = vtk.vtkPolyData()
 
-    if faces is None:
+    # cylinders
+    if faces == 1:
         src = vtk.vtkSuperquadricSource()
-#        src.SetPhiRoundness(0)
-#        src.SetThetaRoundness(1)
-#        src.SetThetaResolution(theta)
-#        src.SetPhiResolution(phi)
-#        src.SetThickness(0)
-        src.SetScale(1, 1, 5)
+        src.SetPhiRoundness(0)
+        src.SetThetaRoundness(1)
+        src.SetScale(5, 5, 30)
+        
+    # ellipse
+    elif faces == 2:
+        src = vtk.vtkSuperquadricSource()
+        src.SetScale(7, 7, 20)
         src.SetToroidal(0)
 
+    # sphere
+    elif faces == 3:
+#        src = vtk.vtk()
+#        src.SetPhiRoundness(1)
+#        src.SetThetaRoundness(1)
+       src = vtk.vtkSphereSource()
+       src.SetCenter(0,-1,0)
+       src.SetRadius(4.0) 
+       src.SetPhiResolution(128)
+       src.SetThetaResolution(128)
+
+    
     else:
 
         ut_vtk.set_polydata_vertices(polydata_sphere, vertices)
@@ -1380,8 +1398,7 @@ def sphere(centers, colors, radii=1., theta=64, phi=64,
     polydata_centers.GetPointData().AddArray(cols)
 
     glyph = vtk.vtkGlyph3D()
-
-    if faces is None:
+    if faces == 1 or faces == 2 or faces == 3:
         glyph.SetSourceConnection(src.GetOutputPort())
     else:
         if major_version <= 5:
