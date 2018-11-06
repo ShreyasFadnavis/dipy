@@ -1300,7 +1300,7 @@ def point(points, colors, opacity=1., point_radius=0.1, theta=8, phi=8):
                   theta=theta, phi=phi, vertices=None, faces=None)
 
 
-def sphere(centers, colors, radii=1., theta=128, phi=128,
+def sphere(centers, colors, radii=1., theta=256, phi=256,
            vertices=None, faces=None):
     """ Visualize one or many spheres with different colors and radii
 
@@ -1329,18 +1329,18 @@ def sphere(centers, colors, radii=1., theta=128, phi=128,
     >>> centers = np.random.rand(1, 3)
     >>> stick1_actor = actor.sphere(centers, window.colors.orange, faces=1)
     >>> stick2_actor = actor.sphere(centers, window.colors.orange, faces=1)
-#    >>> ellipsoid_actor = actor.sphere(centers, window.colors.yellow_light, faces=2)
-#    >>> ellipsoid2_actor = actor.sphere(centers, window.colors.yellow_light, faces=2)
-    >>> sphere1_actor = actor.sphere(centers, window.colors.yellow_light, faces=3)
+    >>> ellipsoid_actor = actor.sphere(centers, window.colors.yellow_light, faces=2)
+    >>> ellipsoid2_actor = actor.sphere(centers, window.colors.yellow_light, faces=2)
+    >>> sphere1_actor = actor.sphere(centers, window.colors.red, faces=3)
     >>> stick1_actor.SetOrientation(0, 1, 30)
     >>> stick2_actor.SetOrientation(90, 1, 30)
-#    >>> ellipsoid_actor.SetOrientation(0, 1, 30)
-#    >>> ellipsoid2_actor.SetOrientation(90, 1, 30)
+    >>> ellipsoid_actor.SetOrientation(0, 1, 30)
+    >>> ellipsoid2_actor.SetOrientation(90, 1, 30)
     >>> sphere1_actor.SetOrientation(0, 1, 30)
     >>> ren.add(stick1_actor)
     >>> ren.add(stick2_actor)
-#    >>> ren.add(ellipsoid_actor)
-#    >>> ren.add(ellipsoid2_actor)
+    >>> ren.add(ellipsoid_actor)
+    >>> ren.add(ellipsoid2_actor)
     >>> ren.add(sphere1_actor)
     >>> window.show(ren)
     """
@@ -1367,24 +1367,22 @@ def sphere(centers, colors, radii=1., theta=128, phi=128,
         src = vtk.vtkSuperquadricSource()
         src.SetPhiRoundness(0)
         src.SetThetaRoundness(1)
-        src.SetScale(5, 5, 30)
+        src.SetScale(3, 3, 30)
+        src.SetToroidal(0)
         
     # ellipse
     elif faces == 2:
         src = vtk.vtkSuperquadricSource()
-        src.SetScale(7, 7, 20)
+        src.SetScale(7, 7, 28)
         src.SetToroidal(0)
 
     # sphere
     elif faces == 3:
-#        src = vtk.vtk()
-#        src.SetPhiRoundness(1)
-#        src.SetThetaRoundness(1)
-       src = vtk.vtkSphereSource()
-       src.SetCenter(0,-1,0)
-       src.SetRadius(4.0) 
-       src.SetPhiResolution(128)
-       src.SetThetaResolution(128)
+        src = vtk.vtkSphereSource()
+        src.SetCenter(0, -1, 0)
+        src.SetRadius(6)
+        src.SetPhiResolution(256)
+        src.SetThetaResolution(256)
 
     
     else:
