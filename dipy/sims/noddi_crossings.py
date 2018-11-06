@@ -45,15 +45,15 @@ volfrac_csf = 0.2
 OD1 = 0.1
 OD2 = 0.1
 
-if noddix_model.num_peaks == 1: 
-#    x_f_sig = np.asarray([volfrac_ic1, volfrac_ec1, volfrac_csf, OD1, theta1, 
-#                          phi1])
-    x_f_sig = np.asarray([volfrac_ic1, volfrac_ic2, volfrac_ec1, volfrac_ec2, 
+if noddix_model.num_peaks == 1:
+    # x_f_sig = np.asarray([volfrac_ic1, volfrac_ec1, volfrac_csf, OD1, theta1,
+    #                      phi1])
+    x_f_sig = np.asarray([volfrac_ic1, volfrac_ic2, volfrac_ec1, volfrac_ec2,
                           volfrac_csf, OD1, theta1, phi1, OD2, theta2, phi2])
     f = x_f_sig[0:3]
-    
-if noddix_model.num_peaks == 2: 
-    x_f_sig = np.asarray([volfrac_ic1, volfrac_ic2, volfrac_ec1, volfrac_ec2, 
+
+if noddix_model.num_peaks == 2:
+    x_f_sig = np.asarray([volfrac_ic1, volfrac_ic2, volfrac_ec1, volfrac_ec2,
                           volfrac_csf, OD1, theta1, phi1, OD2, theta2, phi2])
     f = x_f_sig[0:5]
 
@@ -81,7 +81,7 @@ def sim_voxel_fit(reconst_signal):
     NODDIx_fit = noddix_model.fit(reconst_signal)
     t_end = time.time()
     time_noddix = t_end - t_start
-    coeffs = NODDIx_fit.coeff    
+    coeffs = NODDIx_fit.coeff
     volfic1_err = abs(min(abs(x_f_sig[0] - coeffs[0]), abs(coeffs[2] -
                           x_f_sig[0])))
     volfic2_err = abs(min(abs(x_f_sig[1] - coeffs[1]), abs(coeffs[3] -
@@ -99,7 +99,7 @@ def sim_voxel_fit(reconst_signal):
     OD2_err = abs(x_f_sig[8] - coeffs[8])
     theta2_err = abs(min(abs(x_f_sig[9] - coeffs[9]), abs(coeffs[9] -
                          x_f_sig[6])))
-    phi2_err = abs(min(abs(x_f_sig[10] - coeffs[10]), 
+    phi2_err = abs(min(abs(x_f_sig[10] - coeffs[10]),
                        abs(coeffs[10] - x_f_sig[7])))
 
     errors_list = [volfic1_err, volfic2_err, volfec1_err, volfec2_err,
@@ -113,5 +113,6 @@ def sim_voxel_fit(reconst_signal):
     print('Errors: ', errors_list)
     print('Sum of Errors: ', sum(errors_list))
     return time_noddix
+
 
 sim_voxel_fit(reconst_signal)
