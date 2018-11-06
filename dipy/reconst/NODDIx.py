@@ -107,7 +107,7 @@ class NoddixModel(ReconstModel):
                                               args=(data,), tol=0.001,
                                               seed=200, mutation=(0, 1.05),
                                               strategy='best1bin',
-                                              disp=False, polish=True,
+                                              disp=True, polish=True,
                                               popsize=30)
 
         # Step 1: store the results of the differential evolution in x

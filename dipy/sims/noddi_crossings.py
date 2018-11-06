@@ -31,13 +31,13 @@ noddix_model = noddix.NoddixModel(gtab, params, num_peaks=2, fit_method='MIX')
 """
 Declare the parameters
 """
-volfrac_ic1 = 0.1
+volfrac_ic1 = 0.2
 volfrac_ec1 = 0.2
 theta2 = 0.01745329  # 1 Degree
 phi2 = 0.01745329  # 1 Degree
 
-volfrac_ic2 = 0.3
-volfrac_ec2 = 0.4
+volfrac_ic2 = 0.2
+volfrac_ec2 = 0.2
 theta1 = 1.57079633  # 90 Degree
 phi1 = 0.01745329  # 1 Degree
 
