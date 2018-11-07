@@ -1,4 +1,4 @@
-import os
+oimport os
 import numpy as np
 
 from dipy.viz import actor, window

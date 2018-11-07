@@ -10,7 +10,6 @@ from dipy.io import read_bvals_bvecs
 from dipy.io.image import load_nifti, save_nifti
 from dipy.segment.mask import median_otsu
 
-
 sphere = get_sphere('repulsion724')
 
 fname, fscanner = get_data('small_NODDIx_data')
@@ -80,7 +79,9 @@ print("Transformation Complete!")
 
 
 noddix_model = noddix.NoddixModel(gtab, params, num_peaks=2, fit_method='MIX')
-NODDIx_fit = noddix_model.fit(datan, mask)
+NODDIx_fit = noddix_model.fit(datan[91:94, 127, 68, :], mask[91:94, 127, 68])
 affine = img.affine.copy()
 save_nifti('params.nii.gz', NODDIx_fit.coeff, affine)
 print("NODDIx Model Completely Constructed!")
+
+coeffs = np.asarray(NODDIx_fit.coeff)
