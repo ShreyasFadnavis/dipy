@@ -1329,18 +1329,18 @@ def sphere(centers, colors, radii=1., theta=256, phi=256,
     >>> centers = np.random.rand(1, 3)
     >>> stick1_actor = actor.sphere(centers, window.colors.orange, faces=1)
     >>> stick2_actor = actor.sphere(centers, window.colors.orange, faces=1)
-    >>> ellipsoid_actor = actor.sphere(centers, window.colors.yellow_light, faces=2)
-    >>> ellipsoid2_actor = actor.sphere(centers, window.colors.yellow_light, faces=2)
+#    >>> ellipsoid_actor = actor.sphere(centers, window.colors.yellow_light, faces=2)
+#    >>> ellipsoid2_actor = actor.sphere(centers, window.colors.yellow_light, faces=2)
     >>> sphere1_actor = actor.sphere(centers, window.colors.red, faces=3)
     >>> stick1_actor.SetOrientation(0, 1, 30)
-    >>> stick2_actor.SetOrientation(90, 1, 30)
-    >>> ellipsoid_actor.SetOrientation(0, 1, 30)
-    >>> ellipsoid2_actor.SetOrientation(90, 1, 30)
+    >>> stick2_actor.SetOrientation(75, 1, 30)
+#    >>> ellipsoid_actor.SetOrientation(0, 1, 30)
+#    >>> ellipsoid2_actor.SetOrientation(75, 1, 30)
     >>> sphere1_actor.SetOrientation(0, 1, 30)
     >>> ren.add(stick1_actor)
     >>> ren.add(stick2_actor)
-    >>> ren.add(ellipsoid_actor)
-    >>> ren.add(ellipsoid2_actor)
+#    >>> ren.add(ellipsoid_actor)
+#    >>> ren.add(ellipsoid2_actor)
     >>> ren.add(sphere1_actor)
     >>> window.show(ren)
     """
@@ -1367,20 +1367,28 @@ def sphere(centers, colors, radii=1., theta=256, phi=256,
         src = vtk.vtkSuperquadricSource()
         src.SetPhiRoundness(0)
         src.SetThetaRoundness(1)
-        src.SetScale(3, 3, 30)
+        src.SetScale(7, 7, 30)
+        src.SetToroidal(0)
+
+    # smaller cylinder
+    elif faces == 4:
+        src = vtk.vtkSuperquadricSource()
+        src.SetPhiRoundness(0)
+        src.SetThetaRoundness(1)
+        src.SetScale(7, 7, 12)
         src.SetToroidal(0)
         
     # ellipse
     elif faces == 2:
         src = vtk.vtkSuperquadricSource()
-        src.SetScale(7, 7, 28)
+        src.SetScale(9, 9, 12)
         src.SetToroidal(0)
 
     # sphere
     elif faces == 3:
         src = vtk.vtkSphereSource()
         src.SetCenter(0, -1, 0)
-        src.SetRadius(6)
+        src.SetRadius(4)
         src.SetPhiResolution(256)
         src.SetThetaResolution(256)
 
@@ -1396,7 +1404,7 @@ def sphere(centers, colors, radii=1., theta=256, phi=256,
     polydata_centers.GetPointData().AddArray(cols)
 
     glyph = vtk.vtkGlyph3D()
-    if faces == 1 or faces == 2 or faces == 3:
+    if faces == 1 or faces == 2 or faces == 3 or faces == 4:
         glyph.SetSourceConnection(src.GetOutputPort())
     else:
         if major_version <= 5:
