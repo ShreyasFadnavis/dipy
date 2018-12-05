@@ -1,10 +1,9 @@
-.. image:: doc/_static/dipy-banner.png
+.. image:: doc/_static/dipy-logo.png
+  :height: 180px
   :target: http://dipy.org
-     :alt: DIPY - Diffusion Imaging in Python
+  :alt: DIPY - Diffusion Imaging in Python
 
-======
- DIPY
-======
+|
 
 .. image:: https://travis-ci.org/nipy/dipy.svg?branch=master
   :target: https://travis-ci.org/nipy/dipy
@@ -24,7 +23,10 @@
 .. image:: https://img.shields.io/badge/License-BSD%203--Clause-blue.svg
   :target: https://github.com/nipy/dipy/blob/master/LICENSE
 
-DIPY is a python toolbox for analysis of MR diffusion imaging.
+.. image:: https://ci.appveyor.com/api/projects/status/github/nipy/dipy?branch=master&svg=true
+  :target: https://ci.appveyor.com/project/nipy/dipy
+
+DIPY [DIPYREF]_ is a python library for analysis of MR diffusion imaging.
 
 DIPY is for research only; please do not use results from DIPY for
 clinical decisions.
@@ -41,7 +43,7 @@ Please see the developers' list at
 https://mail.python.org/mailman/listinfo/neuroimaging
 
 Please see the users' forum at
-https://neurostars.org
+https://neurostars.org/tags/dipy
 
 Please join the gitter chatroom `here <https://gitter.im/nipy/dipy>`_.
 
@@ -68,10 +70,10 @@ DIPY can be installed using `pip`::
 
 or using `conda`::
 
-    conda install -c conda-forge dipy vtk
+    conda install -c conda-forge dipy
 
 For detailed installation instructions, including instructions for installing
-from source, please read our `documentation <http://nipy.org/dipy/installation.html>`_.
+from source, please read our `installation documentation <http://nipy.org/dipy/installation.html>`_.
 
 
 License
@@ -84,3 +86,11 @@ Contributing
 ============
 
 We welcome contributions from the community. Please read our `Contributing guidelines <https://github.com/nipy/dipy/blob/master/CONTRIBUTING.md>`_.
+
+Reference
+=========
+
+.. [DIPYREF] E. Garyfallidis, M. Brett, B. Amirbekian, A. Rokem,
+    S. Van Der Walt, M. Descoteaux, I. Nimmo-Smith and DIPY contributors,
+    "DIPY, a library for the analysis of diffusion MRI data",
+    Frontiers in Neuroinformatics, vol. 8, p. 8, Frontiers, 2014.

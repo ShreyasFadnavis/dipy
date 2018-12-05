@@ -4,6 +4,7 @@ import logging
 import numpy as np
 import os.path
 from ast import literal_eval
+from warnings import warn
 
 import nibabel as nib
 
@@ -31,7 +32,7 @@ class ReconstMAPMRIFlow(Workflow):
         return 'mapmri'
 
     def run(self, data_file, data_bvals, data_bvecs, small_delta, big_delta,
-            b0_threshold=0.0, laplacian=True, positivity=True,
+            b0_threshold=50.0, laplacian=True, positivity=True,
             bval_threshold=2000, save_metrics=[],
             laplacian_weighting=0.05, radial_order=6, out_dir='',
             out_rtop='rtop.nii.gz', out_lapnorm='lapnorm.nii.gz',
@@ -43,8 +44,8 @@ class ReconstMAPMRIFlow(Workflow):
         """ Workflow for fitting the MAPMRI model (with optional Laplacian
         regularization). Generates rtop, lapnorm, msd, qiv, rtap, rtpp,
         non-gaussian (ng), parallel ng, perpendicular ng saved in a nifti
-        format in input files provided by `data_file` and saves the nifti files
-        to an output directory specified by `out_dir`.
+        format in input files provided by `data_files` and saves the nifti
+        files to an output directory specified by `out_dir`.
 
         In order for the MAPMRI workflow to work in the way
         intended either the laplacian or positivity or both must
@@ -52,11 +53,11 @@ class ReconstMAPMRIFlow(Workflow):
 
         Parameters
         ----------
-        data_file : string
+        data_files : string
             Path to the input volume.
-        data_bvals : string
+        bvals_files : string
             Path to the bval files.
-        data_bvecs : string
+        bvecs_files : string
             Path to the bvec files.
         small_delta : float
             Small delta value used in generation of gradient table of provided
@@ -66,26 +67,26 @@ class ReconstMAPMRIFlow(Workflow):
             bval and bvec.
         b0_threshold : float, optional
             Threshold used to find b=0 directions (default 0.0)
-        laplacian : bool
+        laplacian : bool, optional
             Regularize using the Laplacian of the MAP-MRI basis (default True)
-        positivity : bool
+        positivity : bool, optional
             Constrain the propagator to be positive. (default True)
-        bval_threshold : float
+        bval_threshold : float, optional
             Sets the b-value threshold to be used in the scale factor
             estimation. In order for the estimated non-Gaussianity to have
             meaning this value should set to a lower value (b<2000 s/mm^2)
             such that the scale factors are estimated on signal points that
             reasonably represent the spins at Gaussian diffusion.
             (default: 2000)
-        save_metrics : list of strings
+        save_metrics : variable string, optional
             List of metrics to save.
             Possible values: rtop, laplacian_signal, msd, qiv, rtap, rtpp,
             ng, perng, parng
             (default: [] (all))
-        laplacian_weighting : float
+        laplacian_weighting : float, optional
             Weighting value used in fitting the MAPMRI model in the laplacian
             and both model types. (default: 0.05)
-        radial_order : unsigned int
+        radial_order : unsigned int, optional
             Even value used to set the order of the basis
             (default: 6)
         out_dir : string, optional
@@ -118,7 +119,10 @@ class ReconstMAPMRIFlow(Workflow):
             data = img.get_data()
             affine = img.affine
             bvals, bvecs = read_bvals_bvecs(bval, bvec)
-
+            if b0_threshold < bvals.min():
+                warn("b0_threshold (value: {0}) is too low, increase your "
+                     "b0_threshold. It should higher than the first b0 value "
+                     "({1}).".format(b0_threshold, bvals.min()))
             gtab = gradient_table(bvals=bvals, bvecs=bvecs,
                                   small_delta=small_delta,
                                   big_delta=big_delta,
@@ -221,7 +225,7 @@ class ReconstDtiFlow(Workflow):
     def get_short_name(cls):
         return 'dti'
 
-    def run(self, input_files, bvalues, bvectors, mask_files, b0_threshold=0.0,
+    def run(self, input_files, bvalues, bvectors, mask_files, b0_threshold=50,
             bvecs_tol=0.01,
             save_metrics=[],
             out_dir='', out_tensor='tensors.nii.gz', out_fa='fa.nii.gz',
@@ -239,10 +243,10 @@ class ReconstDtiFlow(Workflow):
         input_files : string
             Path to the input volumes. This path may contain wildcards to
             process multiple inputs at once.
-        bvalues : string
+        bvalues_files : string
             Path to the bvalues files. This path may contain wildcards to use
             multiple bvalues files at once.
-        bvectors : string
+        bvectors_files : string
             Path to the bvectors files. This path may contain wildcards to use
             multiple bvectors files at once.
         mask_files : string
@@ -398,7 +402,7 @@ class ReconstDtiFlow(Workflow):
         return TensorModel(gtab, fit_method="WLS")
 
     def get_fitted_tensor(self, data, mask, bval, bvec,
-                          b0_threshold=0, bvecs_tol=0.01):
+                          b0_threshold=50, bvecs_tol=0.01):
 
         logging.info('Tensor estimation...')
         bvals, bvecs = read_bvals_bvecs(bval, bvec)
@@ -417,7 +421,7 @@ class ReconstCSDFlow(Workflow):
         return 'csd'
 
     def run(self, input_files, bvalues, bvectors, mask_files,
-            b0_threshold=0.0,
+            b0_threshold=50.0,
             bvecs_tol=0.01,
             roi_center=None,
             roi_radius=10,
@@ -437,10 +441,10 @@ class ReconstCSDFlow(Workflow):
         input_files : string
             Path to the input volumes. This path may contain wildcards to
             process multiple inputs at once.
-        bvalues : string
+        bvalues_files : string
             Path to the bvalues files. This path may contain wildcards to use
             multiple bvalues files at once.
-        bvectors : string
+        bvectors_files : string
             Path to the bvectors files. This path may contain wildcards to use
             multiple bvectors files at once.
         mask_files : string
@@ -507,18 +511,21 @@ class ReconstCSDFlow(Workflow):
             affine = img.affine
 
             bvals, bvecs = read_bvals_bvecs(bval, bvec)
+            print(b0_threshold, bvals.min())
+            if b0_threshold < bvals.min():
+                warn("b0_threshold (value: {0}) is too low, increase your "
+                     "b0_threshold. It should higher than the first b0 value "
+                     "({1}).".format(b0_threshold, bvals.min()))
             gtab = gradient_table(bvals, bvecs, b0_threshold=b0_threshold,
                                   atol=bvecs_tol)
             mask_vol = nib.load(maskfile).get_data().astype(np.bool)
 
-            sh_order = 8
-            if data.shape[-1] < 15:
+            n_params = ((sh_order + 1) * (sh_order + 2)) / 2
+            if data.shape[-1] < n_params:
                 raise ValueError(
-                    'You need at least 15 unique DWI volumes to '
-                    'compute fiber odfs. You currently have: {0}'
-                    ' DWI volumes.'.format(data.shape[-1]))
-            elif data.shape[-1] < 30:
-                sh_order = 6
+                    'You need at least {0} unique DWI volumes to '
+                    'compute fiber odfs. You currently have: {1}'
+                    ' DWI volumes.'.format(n_params, data.shape[-1]))
 
             if frf is None:
                 logging.info('Computing response function')
@@ -595,7 +602,7 @@ class ReconstCSAFlow(Workflow):
         return 'csa'
 
     def run(self, input_files, bvalues, bvectors, mask_files, sh_order=6,
-            odf_to_sh_order=8, b0_threshold=0.0, bvecs_tol=0.01,
+            odf_to_sh_order=8, b0_threshold=50.0, bvecs_tol=0.01,
             extract_pam_values=False,
             out_dir='',
             out_pam='peaks.pam5', out_shm='shm.nii.gz',
@@ -610,10 +617,10 @@ class ReconstCSAFlow(Workflow):
         input_files : string
             Path to the input volumes. This path may contain wildcards to
             process multiple inputs at once.
-        bvalues : string
+        bvalues_files : string
             Path to the bvalues files. This path may contain wildcards to use
             multiple bvalues files at once.
-        bvectors : string
+        bvectors_files : string
             Path to the bvectors files. This path may contain wildcards to use
             multiple bvectors files at once.
         mask_files : string
@@ -652,7 +659,7 @@ class ReconstCSAFlow(Workflow):
 
         References
         ----------
-        .. [1] Aganj, I., et. al. 2009. ODF Reconstruction in Q-Ball Imaging
+        .. [1] Aganj, I., et al. 2009. ODF Reconstruction in Q-Ball Imaging
            with Solid Angle Consideration.
         """
         io_it = self.get_io_iterator()
@@ -666,6 +673,10 @@ class ReconstCSAFlow(Workflow):
             affine = vol.affine
 
             bvals, bvecs = read_bvals_bvecs(bval, bvec)
+            if b0_threshold < bvals.min():
+                warn("b0_threshold (value: {0}) is too low, increase your "
+                     "b0_threshold. It should higher than the first b0 value "
+                     "({1}).".format(b0_threshold, bvals.min()))
             gtab = gradient_table(bvals, bvecs,
                                   b0_threshold=b0_threshold, atol=bvecs_tol)
             mask_vol = nib.load(maskfile).get_data().astype(np.bool)
@@ -712,7 +723,7 @@ class ReconstDkiFlow(Workflow):
     def get_short_name(cls):
         return 'dki'
 
-    def run(self, input_files, bvalues, bvectors, mask_files, b0_threshold=0.0,
+    def run(self, input_files, bvalues, bvectors, mask_files, b0_threshold=50.0,
             save_metrics=[],
             out_dir='', out_dt_tensor='dti_tensors.nii.gz', out_fa='fa.nii.gz',
             out_ga='ga.nii.gz', out_rgb='rgb.nii.gz', out_md='md.nii.gz',
@@ -730,10 +741,10 @@ class ReconstDkiFlow(Workflow):
         input_files : string
             Path to the input volumes. This path may contain wildcards to
             process multiple inputs at once.
-        bvalues : string
+        bvalues_files : string
             Path to the bvalues files. This path may contain wildcards to use
             multiple bvalues files at once.
-        bvectors : string
+        bvectors_files : string
             Path to the bvalues files. This path may contain wildcards to use
             multiple bvalues files at once.
         mask_files : string
@@ -899,11 +910,15 @@ class ReconstDkiFlow(Workflow):
     def get_dki_model(self, gtab):
         return DiffusionKurtosisModel(gtab)
 
-    def get_fitted_tensor(self, data, mask, bval, bvec, b0_threshold=0):
+    def get_fitted_tensor(self, data, mask, bval, bvec, b0_threshold=50):
         logging.info('Diffusion kurtosis estimation...')
         bvals, bvecs = read_bvals_bvecs(bval, bvec)
-        gtab = gradient_table(bvals, bvecs, b0_threshold=b0_threshold)
+        if b0_threshold < bvals.min():
+            warn("b0_threshold (value: {0}) is too low, increase your "
+                 "b0_threshold. It should higher than the first b0 value "
+                 "({1}).".format(b0_threshold, bvals.min()))
 
+        gtab = gradient_table(bvals, bvecs, b0_threshold=b0_threshold)
         dkmodel = self.get_dki_model(gtab)
         dkfit = dkmodel.fit(data, mask)
 

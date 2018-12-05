@@ -5,8 +5,8 @@ Linear fascicle evaluation (LiFE)
 
 Evaluating the results of tractography algorithms is one of the biggest
 challenges for diffusion MRI. One proposal for evaluation of tractography
-results is to use a forward model that predicts the signal from each of a set of
-streamlines, and then fit a linear model to these simultaneous predictions
+results is to use a forward model that predicts the signal from each of a set
+of streamlines, and then fit a linear model to these simultaneous predictions
 [Pestilli2014]_.
 
 We will use streamlines generated using probabilistic tracking on CSA
@@ -23,6 +23,7 @@ created in that example:
 import numpy as np
 import os.path as op
 import nibabel as nib
+from dipy.io.streamline import load_trk
 import dipy.core.optimize as opt
 if not op.exists('lr-superiorfrontal.trk'):
     from streamline_tools import *
@@ -39,8 +40,10 @@ else:
     t1_data = t1.get_data()
     data = hardi_img.get_data()
 # Read the candidates from file in voxel space:
-candidate_sl = [s[0] for s in nib.trackvis.read('lr-superiorfrontal.trk',
-                                                  points_space='voxel')[0]]
+
+candidate_sl, hdr = load_trk('lr-superiorfrontal.trk')
+# candidate_sl = [s[0] for s in nib.trackvis.read('lr-superiorfrontal.trk',
+#                                                  points_space='voxel')[0]]
 
 """
 
@@ -52,18 +55,18 @@ streamliness' (or a 'candidate connectome'):
 
 """
 
-Let's visualize the initial candidate group of streamlines in 3D, relative to the
-anatomical structure of this brain:
+Let's visualize the initial candidate group of streamlines in 3D, relative to
+the anatomical structure of this brain:
 
 """
 
-from dipy.viz.colormap import line_colors
-from dipy.viz import window, actor
+from dipy.viz import window, actor, colormap as cmap
 
 # Enables/disables interactive visualization
 interactive = False
 
-candidate_streamlines_actor = actor.streamtube(candidate_sl, line_colors(candidate_sl))
+candidate_streamlines_actor = actor.streamtube(candidate_sl,
+                                               cmap.line_colors(candidate_sl))
 cc_ROI_actor = actor.contour_from_roi(cc_slice, color=(1., 1., 0.),
                                       opacity=0.5)
 

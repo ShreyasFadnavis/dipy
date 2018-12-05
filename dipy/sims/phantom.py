@@ -1,10 +1,10 @@
 import numpy as np
-import scipy.stats as stats
+# import scipy.stats as stats
 
 from dipy.sims.voxel import SingleTensor, diffusion_evals
 import dipy.sims.voxel as vox
 from dipy.core.geometry import vec2vec_rotmat
-from dipy.data import get_data
+from dipy.data import get_fnames
 from dipy.core.gradients import gradient_table
 
 
@@ -144,7 +144,7 @@ def orbital_phantom(gtab=None,
     """
 
     if gtab is None:
-        fimg, fbvals, fbvecs = get_data('small_64D')
+        fimg, fbvals, fbvecs = get_fnames('small_64D')
         gtab = gradient_table(fbvals, fbvecs)
 
     if func is None:
@@ -240,7 +240,8 @@ if __name__ == "__main__":
     vol4 = orbital_phantom(func=f4)
     vol234 = vol23 + vol4
 
-    voln = add_rician_noise(vol234)
+    # unknown function
+    # voln = add_rician_noise(vol234)
 
     # """
 

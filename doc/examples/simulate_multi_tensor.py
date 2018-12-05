@@ -8,10 +8,7 @@ single voxel using a MultiTensor.
 """
 
 import numpy as np
-from dipy.sims.voxel import (multi_tensor,
-                             multi_tensor_odf,
-                             single_tensor_odf,
-                             all_tensor_evecs)
+from dipy.sims.voxel import multi_tensor, multi_tensor_odf
 from dipy.data import get_sphere
 
 """
@@ -76,7 +73,7 @@ plt.savefig('simulated_signal.png')
 """
 For the ODF simulation we will need a sphere. Because we are interested in a
 simulation of only a single voxel, we can use a sphere with very high
-resolution. We generate that by subdividing the triangles of one of dipy_'s
+resolution. We generate that by subdividing the triangles of one of DIPY_'s
 cached spheres, which we can read in the following way.
 """
 

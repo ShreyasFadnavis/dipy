@@ -23,7 +23,7 @@ from dipy.reconst.dti import (axial_diffusivity, color_fa,
                               _decompose_tensor_nan)
 
 from dipy.io.bvectxt import read_bvec_file
-from dipy.data import get_data, dsi_voxels, get_sphere
+from dipy.data import get_fnames, dsi_voxels, get_sphere
 
 from dipy.core.subdivide_octahedron import create_unit_sphere
 import dipy.core.gradients as grad
@@ -54,7 +54,7 @@ def test_tensor_algebra():
 
 
 def test_odf_with_zeros():
-    fdata, fbval, fbvec = get_data('small_25')
+    fdata, fbval, fbvec = get_fnames('small_25')
     gtab = grad.gradient_table(fbval, fbvec)
     data = nib.load(fdata).get_data()
     dm = dti.TensorModel(gtab)
@@ -66,7 +66,7 @@ def test_odf_with_zeros():
 
 
 def test_tensor_model():
-    fdata, fbval, fbvec = get_data('small_25')
+    fdata, fbval, fbvec = get_fnames('small_25')
     data1 = nib.load(fdata).get_data()
     gtab1 = grad.gradient_table(fbval, fbvec)
     data2, gtab2 = dsi_voxels()
@@ -109,7 +109,7 @@ def test_tensor_model():
 
     # Make some synthetic data
     b0 = 1000.
-    bvecs, bvals = read_bvec_file(get_data('55dir_grad.bvec'))
+    bvecs, bvals = read_bvec_file(get_fnames('55dir_grad.bvec'))
     gtab = grad.gradient_table_from_bvals_bvecs(bvals, bvecs.T)
     # The first b value is 0., so we take the second one:
     B = bvals[1]
@@ -280,7 +280,6 @@ def test_color_fa():
     dm = dti.TensorModel(gtab, 'LS')
     dmfit = dm.fit(data)
     fa = fractional_anisotropy(dmfit.evals)
-    cfa = color_fa(fa, dmfit.evecs)
 
     fa = np.ones((3, 3, 3))
     # evecs should be of shape (fa, 3, 3)
@@ -338,7 +337,7 @@ def test_wls_and_ls_fit():
 
     # Recall: D = [Dxx,Dyy,Dzz,Dxy,Dxz,Dyz,log(S_0)] and D ~ 10^-4 mm^2 /s
     b0 = 1000.
-    bvec, bval = read_bvec_file(get_data('55dir_grad.bvec'))
+    bvec, bval = read_bvec_file(get_fnames('55dir_grad.bvec'))
     B = bval[1]
     # Scale the eigenvalues and tensor by the B value so the units match
     D = np.array([1., 1., 1., 0., 0., 1., -np.log(b0) * B]) / B
@@ -397,7 +396,7 @@ def test_masked_array_with_tensor():
     mask = np.array([[True, False, False, True],
                      [True, False, True, False]])
 
-    bvec, bval = read_bvec_file(get_data('55dir_grad.bvec'))
+    bvec, bval = read_bvec_file(get_fnames('55dir_grad.bvec'))
     gtab = grad.gradient_table_from_bvals_bvecs(bval, bvec.T)
 
     tensor_model = TensorModel(gtab)
@@ -422,7 +421,7 @@ def test_masked_array_with_tensor():
 
 
 def test_fit_method_error():
-    bvec, bval = read_bvec_file(get_data('55dir_grad.bvec'))
+    bvec, bval = read_bvec_file(get_fnames('55dir_grad.bvec'))
     gtab = grad.gradient_table_from_bvals_bvecs(bval, bvec.T)
 
     # This should work (smoke-testing!):
@@ -467,10 +466,10 @@ def test_from_lower_triangular():
 
 
 def test_all_constant():
-    bvecs, bvals = read_bvec_file(get_data('55dir_grad.bvec'))
+    bvecs, bvals = read_bvec_file(get_fnames('55dir_grad.bvec'))
     gtab = grad.gradient_table_from_bvals_bvecs(bvals, bvecs.T)
     fit_methods = ['LS', 'OLS', 'NNLS', 'RESTORE']
-    for fit_method in fit_methods:
+    for _ in fit_methods:
         dm = dti.TensorModel(gtab)
         assert_almost_equal(dm.fit(100 * np.ones(bvals.shape[0])).fa, 0)
         # Doesn't matter if the signal is smaller than 1:
@@ -478,10 +477,10 @@ def test_all_constant():
 
 
 def test_all_zeros():
-    bvecs, bvals = read_bvec_file(get_data('55dir_grad.bvec'))
+    bvecs, bvals = read_bvec_file(get_fnames('55dir_grad.bvec'))
     gtab = grad.gradient_table_from_bvals_bvecs(bvals, bvecs.T)
     fit_methods = ['LS', 'OLS', 'NNLS', 'RESTORE']
-    for fit_method in fit_methods:
+    for _ in fit_methods:
         dm = dti.TensorModel(gtab)
         assert_array_almost_equal(dm.fit(np.zeros(bvals.shape[0])).evals, 0)
 
@@ -526,7 +525,7 @@ def test_mask():
 
 def test_nnls_jacobian_fucn():
     b0 = 1000.
-    bvecs, bval = read_bvec_file(get_data('55dir_grad.bvec'))
+    bvecs, bval = read_bvec_file(get_fnames('55dir_grad.bvec'))
     gtab = grad.gradient_table(bval, bvecs)
     B = bval[1]
 
@@ -563,7 +562,7 @@ def test_nlls_fit_tensor():
     """
 
     b0 = 1000.
-    bvecs, bval = read_bvec_file(get_data('55dir_grad.bvec'))
+    bvecs, bval = read_bvec_file(get_fnames('55dir_grad.bvec'))
     gtab = grad.gradient_table(bval, bvecs)
     B = bval[1]
 
@@ -610,7 +609,7 @@ def test_nlls_fit_tensor():
     npt.assert_raises(ValueError, tensor_model.fit, Y)
 
     # Use NLLS with some actual 4D data:
-    data, bvals, bvecs = get_data('small_25')
+    data, bvals, bvecs = get_fnames('small_25')
     gtab = grad.gradient_table(bvals, bvecs)
     tm1 = dti.TensorModel(gtab, fit_method='NLLS')
     dd = nib.load(data).get_data()
@@ -626,7 +625,7 @@ def test_restore():
     Test the implementation of the RESTORE algorithm
     """
     b0 = 1000.
-    bvecs, bval = read_bvec_file(get_data('55dir_grad.bvec'))
+    bvecs, bval = read_bvec_file(get_fnames('55dir_grad.bvec'))
     gtab = grad.gradient_table(bval, bvecs)
     B = bval[1]
 
@@ -646,7 +645,7 @@ def test_restore():
             # RESTORE estimates should be robust to dropping
             this_y = Y.copy()
             this_y[:, drop_this] = 1.0
-            for sigma in [67.0, np.ones(this_y.shape[-1]) * 67.0]:
+            for _ in [67.0, np.ones(this_y.shape[-1]) * 67.0]:
                 tensor_model = dti.TensorModel(gtab, fit_method='restore',
                                                jac=jac,
                                                sigma=67.0)
@@ -713,7 +712,7 @@ def test_predict():
     assert_array_almost_equal(dmfit.predict(gtab), S)
     assert_array_almost_equal(dm.predict(dmfit.model_params, S0=100), S)
 
-    fdata, fbvals, fbvecs = get_data()
+    fdata, fbvals, fbvecs = get_fnames()
     data = nib.load(fdata).get_data()
     # Make the data cube a bit larger:
     data = np.tile(data.T, 2).T
@@ -774,8 +773,9 @@ def test_eig_from_lo_tri():
     lo_tri = lower_triangular(dmfit.quadratic_form)
     assert_array_almost_equal(dti.eig_from_lo_tri(lo_tri), dmfit.model_params)
 
+
 def test_min_signal_alone():
-    fdata, fbvals, fbvecs = get_data()
+    fdata, fbvals, fbvecs = get_fnames()
     data = nib.load(fdata).get_data()
     gtab = grad.gradient_table(fbvals, fbvecs)
 
@@ -783,7 +783,9 @@ def test_min_signal_alone():
     ten_model = dti.TensorModel(gtab)
     fit_alone = ten_model.fit(data[idx])
     fit_together = ten_model.fit(data)
-    npt.assert_array_almost_equal(fit_together.model_params[idx], fit_alone.model_params, decimal=12)
+    npt.assert_almost_equal(fit_together.model_params[idx],
+                            fit_alone.model_params)
+
 
 def test_decompose_tensor_nan():
     D_fine = np.array([1.7e-3, 0.0, 0.3e-3, 0.0, 0.0, 0.2e-3])

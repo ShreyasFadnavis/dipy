@@ -3,7 +3,7 @@
 Visualize surfaces
 ==================
 
-Here is a simple tutorial that shows how to visualize surfaces using dipy_. It
+Here is a simple tutorial that shows how to visualize surfaces using DIPY_. It
 also shows how to load/save, get/set and update ``vtkPolyData`` and show
 surfaces.
 
@@ -57,7 +57,7 @@ my_triangles = np.array([[0,  6,  4],
                          [0,  4,  5],
                          [0,  5,  1],
                          [1,  5,  7],
-                         [1,  7,  3]],dtype='i8')
+                         [1,  7,  3]], dtype='i8')
 
 
 """

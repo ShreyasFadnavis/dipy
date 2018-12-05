@@ -63,12 +63,12 @@ def test_density_map():
 
     # Test passing affine
     affine = np.diag([2, 2, 2, 1.])
-    affine[:3, 3] = 1.
+    affine[: 3, 3] = 1.
     dm = density_map(streamlines, shape, affine=affine)
     assert_array_equal(dm, expected)
 
     # Shift the image by 2 voxels, ie 4mm
-    affine[:3, 3] -= 4.
+    affine[: 3, 3] -= 4.
     expected_old = expected
     new_shape = [i + 2 for i in shape]
     expected = np.zeros(new_shape)
@@ -139,7 +139,6 @@ def test_connectivity_matrix():
     assert_true(mapping[4, 3][0] is streamlines[2])
 
     # Test passing affine to connectivity_matrix
-    expected = matrix
     affine = np.diag([-1, -1, -1, 1.])
     streamlines = [-i for i in streamlines]
     matrix = connectivity_matrix(streamlines, label_volume, affine=affine)
@@ -396,7 +395,7 @@ def test_voxel_ornt():
     assert_array_equal(np.dot(toras_affine, sra_affine), I4)
     expected_sl = (sl[:, [2, 0, 1]] for sl in streamlines)
     test_sl = move_streamlines(streamlines, sra_affine)
-    for ii in xrange(len(streamlines)):
+    for _ in xrange(len(streamlines)):
         assert_array_equal(next(test_sl), next(expected_sl))
 
     lpi_affine = reorder_voxels_affine(ras, lpi, sh, sz)
@@ -404,7 +403,7 @@ def test_voxel_ornt():
     assert_array_equal(np.dot(toras_affine, lpi_affine), I4)
     expected_sl = (box - sl for sl in streamlines)
     test_sl = move_streamlines(streamlines, lpi_affine)
-    for ii in xrange(len(streamlines)):
+    for _ in xrange(len(streamlines)):
         assert_array_equal(next(test_sl), next(expected_sl))
 
     srp_affine = reorder_voxels_affine(ras, srp, sh, sz)
@@ -415,7 +414,7 @@ def test_voxel_ornt():
         sl[:, 1] = box[1] - sl[:, 1]
     expected_sl = (sl[:, [2, 0, 1]] for sl in expected_sl)
     test_sl = move_streamlines(streamlines, srp_affine)
-    for ii in xrange(len(streamlines)):
+    for _ in xrange(len(streamlines)):
         assert_array_equal(next(test_sl), next(expected_sl))
 
 
@@ -538,6 +537,24 @@ def test_random_seeds_from_mask():
     assert_equal(100, len(seeds))
     assert_true(np.all((seeds > 1.5) & (seeds < 2.5)))
 
+    mask = np.zeros((15, 15, 15))
+    mask[2:14, 2:14, 2:14] = 1
+    seeds_npv_2 = random_seeds_from_mask(mask, seeds_count=2,
+                                         seed_count_per_voxel=True,
+                                         random_seed=0)[:150]
+    seeds_npv_3 = random_seeds_from_mask(mask, seeds_count=3,
+                                         seed_count_per_voxel=True,
+                                         random_seed=0)[:150]
+    assert_true(np.all(seeds_npv_2 == seeds_npv_3))
+
+    seeds_nt_150 = random_seeds_from_mask(mask, seeds_count=150,
+                                          seed_count_per_voxel=False,
+                                          random_seed=0)[:150]
+    seeds_nt_500 = random_seeds_from_mask(mask, seeds_count=500,
+                                          seed_count_per_voxel=False,
+                                          random_seed=0)[:150]
+    assert_true(np.all(seeds_nt_150 == seeds_nt_500))
+
 
 def test_connectivity_matrix_shape():
     # Labels: z-planes have labels 0,1,2
@@ -627,8 +644,6 @@ def test_get_flexi_tvis_affine():
     assert_array_almost_equal(origin[:3],
                               np.multiply(tvis_hdr['dim'], vsz) - vsz / 2)
 
-
-    # grid_affine =
     tvis_hdr['voxel_order'] = 'ASL'
     vsz = tvis_hdr['voxel_size'] = np.array([3, 4, 2.])
     affine = get_flexi_tvis_affine(tvis_hdr, grid_affine)

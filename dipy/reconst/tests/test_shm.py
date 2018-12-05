@@ -60,7 +60,6 @@ def test_real_sph_harm():
 
     rsh = real_sph_harm
     pi = np.pi
-    exp = np.exp
     sqrt = np.sqrt
     sin = np.sin
     cos = np.cos
@@ -107,16 +106,16 @@ def test_real_sym_sh_mrtrix():
 
 def test_real_sym_sh_basis():
     # This test should do for now
-    # The mrtrix basis should be the same as re-ordering and re-scaling the
-    # fibernav basis
+    # The tournier07 basis should be the same as re-ordering and re-scaling the
+    # descoteaux07 basis
     new_order = [0, 5, 4, 3, 2, 1, 14, 13, 12, 11, 10, 9, 8, 7, 6]
     sphere = hemi_icosahedron.subdivide(2)
     basis, m, n = real_sym_sh_mrtrix(4, sphere.theta, sphere.phi)
     expected = basis[:, new_order]
     expected *= np.where(m == 0, 1., np.sqrt(2))
 
-    fibernav_basis, m, n = real_sym_sh_basis(4, sphere.theta, sphere.phi)
-    assert_array_almost_equal(fibernav_basis, expected)
+    descoteaux07_basis, m, n = real_sym_sh_basis(4, sphere.theta, sphere.phi)
+    assert_array_almost_equal(descoteaux07_basis, expected)
 
 
 def test_smooth_pinv():
@@ -149,7 +148,6 @@ def test_normalize_data():
 
     where_b0 = np.zeros(65, 'bool')
     where_b0[0] = True
-    d = normalize_data(sig, where_b0, 1)
     assert_raises(ValueError, normalize_data, sig, where_b0, out=sig)
 
     norm_sig = normalize_data(sig, where_b0, min_signal=1)
@@ -187,10 +185,6 @@ def make_fake_signal():
 
     evals = np.array([[2.1, .2, .2], [.2, 2.1, .2]]) * 10 ** -3
     evecs0 = np.eye(3)
-    sq3 = np.sqrt(3) / 2.
-    evecs1 = np.array([[sq3, .5, 0],
-                       [.5, sq3, 0],
-                       [0, 0, 1.]])
     evecs1 = evecs0
     a = evecs0[0]
     b = evecs1[1]
@@ -326,8 +320,6 @@ def test_bootstrap_array():
     assert_array_almost_equal(bootstrap_data_voxel(dhat, H, R), dhat)
     assert_array_almost_equal(bootstrap_data_array(dhat, H, R), dhat)
 
-    H = np.zeros((5, 5))
-
 
 def test_ResidualBootstrapWrapper():
     B = np.array([[4, 5, 7, 4, 2.],
@@ -368,13 +360,33 @@ def test_sf_to_sh():
     odf2 = sh_to_sf(odf_sh, sphere, 8)
     assert_array_almost_equal(odf, odf2, 2)
 
-    odf_sh = sf_to_sh(odf, sphere, 8, "mrtrix")
-    odf2 = sh_to_sf(odf_sh, sphere, 8, "mrtrix")
+    odf_sh = sf_to_sh(odf, sphere, 8, "tournier07")
+    odf2 = sh_to_sf(odf_sh, sphere, 8, "tournier07")
     assert_array_almost_equal(odf, odf2, 2)
 
-    odf_sh = sf_to_sh(odf, sphere, 8, "fibernav")
-    odf2 = sh_to_sf(odf_sh, sphere, 8, "fibernav")
+    # Test the basis naming deprecation
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always", DeprecationWarning)
+        odf_sh_mrtrix = sf_to_sh(odf, sphere, 8, "mrtrix")
+        odf2_mrtrix = sh_to_sf(odf_sh_mrtrix, sphere, 8, "mrtrix")
+        assert_array_almost_equal(odf, odf2_mrtrix, 2)
+        assert len(w) != 0
+        assert issubclass(w[-1].category, DeprecationWarning)
+        warnings.simplefilter("default", DeprecationWarning)
+
+    odf_sh = sf_to_sh(odf, sphere, 8, "descoteaux07")
+    odf2 = sh_to_sf(odf_sh, sphere, 8, "descoteaux07")
     assert_array_almost_equal(odf, odf2, 2)
+
+    # Test the basis naming deprecation
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always", DeprecationWarning)
+        odf_sh_fibernav = sf_to_sh(odf, sphere, 8, "fibernav")
+        odf2_fibernav = sh_to_sf(odf_sh_fibernav, sphere, 8, "fibernav")
+        assert_array_almost_equal(odf, odf2_fibernav, 2)
+        assert len(w) != 0
+        assert issubclass(w[-1].category, DeprecationWarning)
+        warnings.simplefilter("default", DeprecationWarning)
 
     # 2D case
     odf2d = np.vstack((odf2, odf))
@@ -382,6 +394,8 @@ def test_sf_to_sh():
     odf2d_sf = sh_to_sf(odf2d_sh, sphere, 8)
     assert_array_almost_equal(odf2d, odf2d_sf, 2)
 
+
+test_sf_to_sh()
 
 def test_faster_sph_harm():
 
@@ -465,7 +479,8 @@ def test_calculate_max_order():
     for o, n in zip(orders, n_coeffs):
         assert_equal(calculate_max_order(n), o)
 
+    assert_raises(ValueError, calculate_max_order, 29)
 
-if __name__ == "__main__":
-    import nose
-    nose.runmodule()
+#if __name__ == "__main__":
+#    import nose
+#    nose.runmodule()

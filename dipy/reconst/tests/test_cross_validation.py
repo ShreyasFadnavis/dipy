@@ -17,7 +17,7 @@ import dipy.reconst.base as base
 
 
 # We'll set these globally:
-fdata, fbval, fbvec = dpd.get_data('small_64D')
+fdata, fbval, fbvec = dpd.get_fnames('small_64D')
 
 
 def test_coeff_of_determination():
@@ -41,9 +41,6 @@ def test_dti_xval():
     dm = dti.TensorModel(gtab, 'LS')
     # The data has 102 directions, so will not divide neatly into 10 bits
     npt.assert_raises(ValueError, xval.kfold_xval, dm, data, 10)
-
-    # But we can do this with 2 folds:
-    kf_xval = xval.kfold_xval(dm, data, 2)
 
     # In simulation with no noise, COD should be perfect:
     psphere = dpd.get_sphere('symmetric362')
@@ -77,7 +74,6 @@ def test_csd_xval():
     S0 = np.mean(data[..., gtab.b0s_mask])
     response = ([0.0015, 0.0003, 0.0001], S0)
     csdm = csd.ConstrainedSphericalDeconvModel(gtab, response)
-    kf_xval = xval.kfold_xval(csdm, data, 2, response, sh_order=2)
 
     # In simulation, it should work rather well (high COD):
     psphere = dpd.get_sphere('symmetric362')

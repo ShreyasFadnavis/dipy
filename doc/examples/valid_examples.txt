@@ -15,6 +15,7 @@
  reconst_dsid.py
  reconst_ivim.py
  reconst_mapmri.py
+ reconst_qtdmri.py
  kfold_xval.py
  reslice_datasets.py
  segment_quickbundles.py
@@ -50,6 +51,7 @@
  tissue_classification.py
  bundle_registration.py
  tracking_tissue_classifier.py
+ tracking_bootstrap_peaks.py
 # piesno.py
  viz_advanced.py
  viz_slice.py
@@ -60,3 +62,8 @@
  viz_surfaces.py
  viz_roi_contour.py
  viz_ui.py
+ register_binary_fuzzy.py
+ bundle_extraction.py
+ viz_timer.py
+ cluster_confidence.py
+ path_length_map.py

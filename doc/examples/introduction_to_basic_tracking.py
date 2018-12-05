@@ -84,9 +84,10 @@ label value ``2`` in the labels image.
 """
 
 from dipy.tracking import utils
+import numpy as np
 
 seed_mask = labels == 2
-seeds = utils.seeds_from_mask(seed_mask, density=[2, 2, 2], affine=affine)
+seeds = utils.seeds_from_mask(seed_mask, density=[2, 2, 2], affine=np.eye(4))
 
 """
 Finally, we can bring it all together using ``LocalTracking``. We will then
@@ -94,24 +95,24 @@ display the resulting streamlines using the ``dipy.viz`` package.
 """
 
 from dipy.tracking.local import LocalTracking
-from dipy.viz import window, actor
-from dipy.viz.colormap import line_colors
+from dipy.viz import window, actor, colormap as cmap, have_fury
 from dipy.tracking.streamline import Streamlines
 
 # Enables/disables interactive visualization
 interactive = False
 
 # Initialization of LocalTracking. The computation happens in the next step.
-streamlines_generator = LocalTracking(csa_peaks, classifier, seeds, affine, step_size=.5)
+streamlines_generator = LocalTracking(csa_peaks, classifier, seeds,
+                                      affine=np.eye(4), step_size=.5)
 
 # Generate streamlines object
 streamlines = Streamlines(streamlines_generator)
 
 # Prepare the display objects.
-color = line_colors(streamlines)
+color = cmap.line_colors(streamlines)
 
-if window.have_vtk:
-    streamlines_actor = actor.line(streamlines, line_colors(streamlines))
+if have_fury:
+    streamlines_actor = actor.line(streamlines, cmap.line_colors(streamlines))
 
     # Create the 3D display.
     r = window.Renderer()
@@ -193,14 +194,15 @@ Next we can pass this direction getter, along with the ``classifier`` and
 callosum.
 """
 
-streamlines_generator = LocalTracking(prob_dg, classifier, seeds, affine,
-                            step_size=.5, max_cross=1)
+streamlines_generator = LocalTracking(prob_dg, classifier, seeds,
+                                      affine=np.eye(4), step_size=.5,
+                                      max_cross=1)
 
 # Generate streamlines object.
 streamlines = Streamlines(streamlines_generator)
 
-if window.have_vtk:
-    streamlines_actor = actor.line(streamlines, line_colors(streamlines))
+if have_fury:
+    streamlines_actor = actor.line(streamlines, cmap.line_colors(streamlines))
 
     # Create the 3D display.
     r = window.Renderer()

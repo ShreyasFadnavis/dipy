@@ -14,7 +14,7 @@ new ``Metric`` classes that can be used by QuickBundles.
 
 Clustering framework
 ====================
-dipy_ provides a simple, flexible and fast framework to do clustering of
+DIPY_ provides a simple, flexible and fast framework to do clustering of
 sequential data (e.g. streamlines).
 
 A *sequential datum* in DIPY is represented as a numpy array of size
@@ -103,10 +103,10 @@ We start by loading the fornix streamlines.
 
 import numpy as np
 from nibabel import trackvis as tv
-from dipy.data import get_data
+from dipy.data import get_fnames
 from dipy.viz import window, actor
 
-fname = get_data('fornix')
+fname = get_fnames('fornix')
 streams, hdr = tv.read(fname)
 streamlines = [i[0] for i in streams]
 
@@ -210,10 +210,10 @@ We start by loading the fornix streamlines.
 
 import numpy as np
 from nibabel import trackvis as tv
-from dipy.data import get_data
+from dipy.data import get_fnames
 from dipy.viz import window, actor
 
-fname = get_data('fornix')
+fname = get_fnames('fornix')
 streams, hdr = tv.read(fname)
 streamlines = [i[0] for i in streams]
 

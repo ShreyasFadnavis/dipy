@@ -30,7 +30,7 @@ def test_inv_nchi():
 def test_piesno():
     # Values taken from hispeed.OptimalPIESNO with the test data
     # in the package computed in matlab
-    test_piesno_data = nib.load(dpd.get_data("test_piesno")).get_data()
+    test_piesno_data = nib.load(dpd.get_fnames("test_piesno")).get_data()
     sigma = piesno(test_piesno_data, N=8, alpha=0.01, l=1, eps=1e-10,
                    return_mask=False)
     assert_almost_equal(sigma, 0.010749458025559)
@@ -176,9 +176,5 @@ def test_pca_noise_estimate():
                     assert_array_almost_equal(np.mean(sigma_est), sigma,
                                               decimal=1)
 
-    sigma = 1
-    noise1 = np.random.normal(0, sigma, size=signal.shape)
-    noise2 = np.random.normal(0, sigma, size=signal.shape)
-    signal = np.ones((20, 20, 20, gtab.bvals.shape[0]))
     assert_(np.mean(pca_noise_estimate(data, gtab, correct_bias=True)) >
             np.mean(pca_noise_estimate(data, gtab, correct_bias=False)))

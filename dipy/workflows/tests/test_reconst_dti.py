@@ -7,7 +7,7 @@ import numpy as np
 
 from nose.tools import assert_equal
 
-from dipy.data import get_data
+from dipy.data import get_fnames
 from dipy.workflows.reconst import ReconstDtiFlow
 
 
@@ -16,9 +16,9 @@ def test_reconst_dti_wls():
 
 def reconst_mmri_core(flow, extra_args=[]):
     with TemporaryDirectory() as out_dir:
-        data_path, bval_path, bvec_path = get_data('small_25')
+        data_path, bval_path, bvec_path = get_fnames('small_25')
         vol_img = nib.load(data_path)
-        volume = vol_img.get_data()
+        vol_img.get_data()
         # mask = np.ones_like(volume[:, :, :, 0])
         # mask_img = nib.Nifti1Image(mask.astype(np.uint8), vol_img.affine)
         # mask_path = join(out_dir, 'tmp_mask.nii.gz')
@@ -36,7 +36,7 @@ def test_reconst_dti_nlls():
 
 def reconst_flow_core(flow, extra_args=[]):
     with TemporaryDirectory() as out_dir:
-        data_path, bval_path, bvec_path = get_data('small_25')
+        data_path, bval_path, bvec_path = get_fnames('small_25')
         vol_img = nib.load(data_path)
         volume = vol_img.get_data()
         mask = np.ones_like(volume[:, :, :, 0])

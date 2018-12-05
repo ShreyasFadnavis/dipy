@@ -655,9 +655,7 @@ def odf_deconv(odf_sh, R, B_reg, lambda_=1., tau=0.1, r2_term=False):
         Z = np.linalg.norm(fodf)
         fodf_sh /= Z
 
-    fodf = np.dot(B_reg, fodf_sh)
     threshold = tau * np.max(np.dot(B_reg, fodf_sh))
-    # print(np.min(fodf), np.max(fodf), np.mean(fodf), threshold, tau)
 
     k = []
     convergence = 50
@@ -679,7 +677,7 @@ def odf_deconv(odf_sh, R, B_reg, lambda_=1., tau=0.1, r2_term=False):
         ODF = np.concatenate((odf_sh, np.zeros(k.shape)))
         try:
             fodf_sh = np.linalg.lstsq(M, ODF, rcond=-1)[0]
-        except np.linalg.LinAlgError as lae:
+        except np.linalg.LinAlgError:
             # SVD did not converge in Linear Least Squares in current
             # voxel. Proceeding with initial SH estimate for this voxel.
             pass
@@ -704,8 +702,12 @@ def odf_sh_to_sharp(odfs_sh, sphere, basis=None, ratio=3 / 15., sh_order=8,
         array of odfs expressed as spherical harmonics coefficients
     sphere : Sphere
         sphere used to build the regularization matrix
-    basis : {None, 'mrtrix', 'fibernav'}
-        different spherical harmonic basis. None is the fibernav basis as well.
+    basis : {None, 'tournier07', 'descoteaux07'}
+        different spherical harmonic basis:
+        ``None`` for the default DIPY basis,
+        ``tournier07`` for the Tournier 2007 [4]_ basis, and
+        ``descoteaux07`` for the Descoteaux 2007 [3]_ basis
+        (``None`` defaults to ``descoteaux07``).
     ratio : float,
         ratio of the smallest vs the largest eigenvalue of the single prolate
         tensor response function (:math:`\frac{\lambda_2}{\lambda_1}`)
@@ -739,8 +741,14 @@ def odf_sh_to_sharp(odfs_sh, sphere, basis=None, ratio=3 / 15., sh_order=8,
     .. [2] Descoteaux, M., et al. IEEE TMI 2009. Deterministic and
            Probabilistic Tractography Based on Complex Fibre Orientation
            Distributions
-    .. [3] Descoteaux, M, et al. MRM 2007. Fast, Regularized and Analytical
-           Q-Ball Imaging
+    .. [3] Descoteaux, M., Angelino, E., Fitzgibbons, S. and Deriche, R.
+           Regularized, Fast, and Robust Analytical Q-ball Imaging.
+           Magn. Reson. Med. 2007;58:497-510.
+    .. [4] Tournier J.D., Calamante F. and Connelly A. Robust determination
+           of the fibre orientation distribution in diffusion MRI:
+           Non-negativity constrained super-resolved spherical deconvolution.
+           NeuroImage. 2007;35(4):1459-1472.
+
     """
     r, theta, phi = cart2sphere(sphere.x, sphere.y, sphere.z)
     real_sym_sh = sph_harm_lookup[basis]
@@ -813,9 +821,9 @@ def auto_response(gtab, data, roi_center=None, roi_radius=10, fa_thr=0.7,
     fa_thr : float
         FA threshold
     fa_callable : callable
-        A callable that defines an operation that compares FA with the fa_thr. The operator
-        should have two positional arguments (e.g., `fa_operator(FA, fa_thr)`) and it should
-        return a bool array.
+        A callable that defines an operation that compares FA with the fa_thr.
+        The operator should have two positional arguments
+        (e.g., `fa_operator(FA, fa_thr)`) and it should return a bool array.
     return_number_of_voxels : bool
         If True, returns the number of voxels used for estimating the response
         function.
@@ -1017,7 +1025,7 @@ def recursive_response(gtab, data, mask=None, sh_order=8, peak_thr=0.01,
     where_dwi = lazy_index(~gtab.b0s_mask)
     response_p = np.ones(len(n))
 
-    for num_it in range(iter):
+    for _ in range(iter):
         r_sh_all = np.zeros(len(n))
         csd_model = ConstrainedSphericalDeconvModel(gtab, res_obj,
                                                     sh_order=sh_order)

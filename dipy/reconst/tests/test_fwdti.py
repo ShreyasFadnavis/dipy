@@ -17,9 +17,9 @@ from dipy.sims.voxel import (multi_tensor, single_tensor,
                              all_tensor_evecs, multi_tensor_dki)
 from dipy.io.gradients import read_bvals_bvecs
 from dipy.core.gradients import gradient_table
-from dipy.data import get_data
+from dipy.data import get_fnames
 
-fimg, fbvals, fbvecs = get_data('small_64D')
+fimg, fbvals, fbvecs = get_fnames('small_64D')
 bvals, bvecs = read_bvals_bvecs(fbvals, fbvecs)
 gtab = gradient_table(bvals, bvecs)
 
@@ -240,7 +240,7 @@ def test_cholesky_functions():
 
 def test_fwdti_jac_multi_voxel():
     fwdm = fwdti.FreeWaterTensorModel(gtab_2s, 'WLS')
-    fwefit = fwdm.fit(DWI[0, :, :])
+    fwdm.fit(DWI[0, :, :])
 
     # no f transform
     fwdm = fwdti.FreeWaterTensorModel(gtab_2s, 'NLS', f_transform=False,

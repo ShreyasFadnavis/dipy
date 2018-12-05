@@ -65,7 +65,7 @@ bvals_no_b0 = np.array([5., 10., 20., 30., 40., 60., 80., 100.,
                         500., 600., 700., 800., 900., 1000.])
 
 bvecs_no_b0 = generate_bvecs(N)
-gtab_no_b0 = gradient_table(bvals_no_b0, bvecs.T)
+gtab_no_b0 = gradient_table(bvals_no_b0, bvecs.T, b0_threshold=bvals.min())
 
 bvals_with_multiple_b0 = np.array([0., 0., 0., 0., 40., 60., 80., 100.,
                                    120., 140., 160., 180., 200., 300., 400.,
@@ -217,13 +217,6 @@ def test_bounds_x0():
        signal = data[160, 98, 33, :]
 
     """
-    test_signal = np.array([4574.34814453, 4745.18164062, 4759.51806641,
-                            4618.24951172, 4665.63623047, 4568.046875,
-                            4525.90478516, 4734.54785156, 4526.41357422,
-                            4299.99414062, 4256.61279297, 4254.50292969,
-                            4098.74707031, 3776.10375977, 3614.0769043,
-                            3440.56445312, 3146.52294922, 3006.94287109,
-                            2879.69580078, 2728.44018555, 2600.09472656])
     x0_test = np.array([1., 0.13, 0.001, 0.0001])
     test_signal = ivim_prediction(x0_test, gtab)
 
@@ -294,7 +287,7 @@ def test_multiple_b0():
 
     ivim_model_multiple_b0 = IvimModel(gtab_with_multiple_b0)
 
-    x0_estimated = ivim_model_multiple_b0.fit(data_single)
+    ivim_model_multiple_b0.fit(data_single)
     # Test if all signals are positive
 
 

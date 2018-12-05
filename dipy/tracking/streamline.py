@@ -9,6 +9,7 @@ import nibabel as nib
 from nibabel.affines import apply_affine
 from dipy.tracking.streamlinespeed import set_number_of_points
 from dipy.tracking.streamlinespeed import length
+from dipy.tracking.distances import bundles_distances_mdf
 from dipy.tracking.streamlinespeed import compress_streamlines
 import dipy.tracking.utils as ut
 from dipy.tracking.utils import streamline_near_roi
@@ -29,7 +30,6 @@ else:
 
     MEGABYTE = 1024 * 1024
 
-
     class _BuildCache(object):
         def __init__(self, arr_seq, common_shape, dtype):
             self.offsets = list(arr_seq._offsets)
@@ -37,8 +37,12 @@ else:
             self.next_offset = arr_seq._get_next_offset()
             self.bytes_per_buf = arr_seq._buffer_size * MEGABYTE
             # Use the passed dtype only if null data array
-            self.dtype = dtype if arr_seq._data.size == 0 else arr_seq._data.dtype
-            if arr_seq.common_shape != () and common_shape != arr_seq.common_shape:
+            if arr_seq._data.size == 0:
+                self.dtype = dtype
+            else:
+                arr_seq._data.dtype
+            if (arr_seq.common_shape != () and
+                    common_shape != arr_seq.common_shape):
                 raise ValueError(
                     "All dimensions, except the first one, must match exactly")
             self.common_shape = common_shape
@@ -50,34 +54,32 @@ else:
             arr_seq._offsets = np.array(self.offsets)
             arr_seq._lengths = np.array(self.lengths)
 
-
     class Streamlines(ArraySequence):
-
         def __init__(self, *args, **kwargs):
             super(Streamlines, self).__init__(*args, **kwargs)
 
         def append(self, element, cache_build=False):
-            """ Appends `element` to this array sequence.
+            """
+            Appends `element` to this array sequence.
+
             Append can be a lot faster if it knows that it is appending several
-            elements instead of a single element.  In that case it can cache the
-            parameters it uses between append operations, in a "build cache".  To
-            tell append to do this, use ``cache_build=True``.  If you use
-            ``cache_build=True``, you need to finalize the append operations with
-            :meth:`finalize_append`.
+            elements instead of a single element.  In that case it can cache
+            the parameters it uses between append operations, in a "build
+            cache". To tell append to do this, use ``cache_build=True``.  If
+            you use ``cache_build=True``, you need to finalize the append
+            operations with :meth:`finalize_append`.
+
             Parameters
             ----------
-            element : ndarray
-                Element to append. The shape must match already inserted elements
-                shape except for the first dimension.
-            cache_build : {False, True}
-                Whether to save the build cache from this append routine.  If True,
-                append can assume it is the only player updating `self`, and the
-                caller must finalize `self` after all append operations, with
-                ``self.finalize_append()``.
-            Returns
+            element : ndarray Element to append. The shape must match already
+                inserted elements shape except for the first dimension.
+                cache_build : {False, True} Whether to save the build cache
+                from this append routine.  If True, append can assume it is the
+                only player updating `self`, and the caller must finalize
+                `self` after all append operations, with
+                ``self.finalize_append()``. Returns
             -------
-            None
-            Notes
+            None Notes
             -----
             If you need to add multiple elements you should consider
             `ArraySequence.extend`.
@@ -124,19 +126,20 @@ else:
             """ Appends all `elements` to this array sequence.
             Parameters
             ----------
-            elements : iterable of ndarrays or :class:`ArraySequence` object
-                If iterable of ndarrays, each ndarray will be concatenated along
-                the first dimension then appended to the data of this
+            elements : iterable of ndarrays or :class:`ArraySequence` instance
+
+                If iterable of ndarrays, each ndarray will be concatenated
+                along the first dimension then appended to the data of this
                 ArraySequence.
-                If :class:`ArraySequence` object, its data are simply appended to
-                the data of this ArraySequence.
+                If :class:`ArraySequence` object, its data are simply appended
+                to the data of this ArraySequence.
+
             Returns
             -------
-            None
-            Notes
+            None Notes
             -----
-            The shape of the elements to be added must match the one of the data of
-            this :class:`ArraySequence` except for the first dimension.
+            The shape of the elements to be added must match the one of the
+            data of this :class:`ArraySequence` except for the first dimension.
             """
             # If possible try pre-allocating memory.
             try:
@@ -176,13 +179,12 @@ def unlist_streamlines(streamlines):
     offsets = np.zeros(len(streamlines), dtype='i8')
 
     curr_pos = 0
-    prev_pos = 0
     for (i, s) in enumerate(streamlines):
 
-            prev_pos = curr_pos
-            curr_pos += s.shape[0]
-            points[prev_pos:curr_pos] = s
-            offsets[i] = curr_pos
+        prev_pos = curr_pos
+        curr_pos += s.shape[0]
+        points[prev_pos:curr_pos] = s
+        offsets[i] = curr_pos
 
     return points, offsets
 
@@ -231,35 +233,96 @@ def center_streamlines(streamlines):
     return [s - center for s in streamlines], center
 
 
-def transform_streamlines(streamlines, mat):
-    """ Apply affine transformation to streamlines
+def deform_streamlines(streamlines,
+                       deform_field,
+                       stream_to_current_grid,
+                       current_grid_to_world,
+                       stream_to_ref_grid,
+                       ref_grid_to_world):
+    """ Apply deformation field to streamlines
 
     Parameters
     ----------
     streamlines : list
         List of 2D ndarrays of shape[-1]==3
-    mat : array, (4, 4)
-        transformation matrix
+    deform_field : 4D numpy array
+        x,y,z displacements stored in volume, shape[-1]==3
+    stream_to_current_grid : array, (4, 4)
+        transform matrix voxmm space to original grid space
+    current_grid_to_world : array (4, 4)
+        transform matrix original grid space to world coordinates
+    stream_to_ref_grid : array (4, 4)
+        transform matrix voxmm space to new grid space
+    ref_grid_to_world : array(4, 4)
+        transform matrix new grid space to world coordinates
 
     Returns
     -------
     new_streamlines : list
         List of the transformed 2D ndarrays of shape[-1]==3
     """
+
+    if deform_field.shape[-1] != 3:
+        raise ValueError("Last dimension of deform_field needs shape==3")
+
+    stream_in_curr_grid = transform_streamlines(streamlines,
+                                                stream_to_current_grid)
+    displacements = values_from_volume(deform_field, stream_in_curr_grid)
+    stream_in_world = transform_streamlines(stream_in_curr_grid,
+                                            current_grid_to_world)
+    new_streams_in_world = [sum(d, s) for d, s in zip(displacements,
+                                                      stream_in_world)]
+    new_streams_grid = transform_streamlines(new_streams_in_world,
+                                             np.linalg.inv(ref_grid_to_world))
+    new_streamlines = transform_streamlines(new_streams_grid,
+                                            np.linalg.inv(stream_to_ref_grid))
+    return new_streamlines
+
+
+def transform_streamlines(streamlines, mat, in_place=False):
+    """ Apply affine transformation to streamlines
+
+    Parameters
+    ----------
+    streamlines : Streamlines
+        Streamlines object
+    mat : array, (4, 4)
+        transformation matrix
+    in_place : bool
+        If True then change data in place.
+        Be careful changes input streamlines.
+
+    Returns
+    -------
+    new_streamlines : Streamlines
+        Sequence transformed 2D ndarrays of shape[-1]==3
+    """
+    # using new Streamlines API
+    if isinstance(streamlines, Streamlines):
+        if in_place:
+            streamlines._data = apply_affine(mat, streamlines._data)
+            return streamlines
+        new_streamlines = streamlines.copy()
+        new_streamlines._data = apply_affine(mat, new_streamlines._data)
+        return new_streamlines
+    # supporting old data structure of streamlines
     return [apply_affine(mat, s) for s in streamlines]
 
 
-def select_random_set_of_streamlines(streamlines, select):
+def select_random_set_of_streamlines(streamlines, select, rng=None):
     """ Select a random set of streamlines
 
     Parameters
     ----------
-    streamlines : list
-        List of 2D ndarrays of shape[-1]==3
+    streamlines : Steamlines
+        Object of 2D ndarrays of shape[-1]==3
 
     select : int
         Number of streamlines to select. If there are less streamlines
         than ``select`` then ``select=len(streamlines)``.
+
+    rng : RandomState
+        Default None.
 
     Returns
     -------
@@ -270,7 +333,11 @@ def select_random_set_of_streamlines(streamlines, select):
     The same streamline will not be selected twice.
     """
     len_s = len(streamlines)
-    index = np.random.choice(len_s, min(select, len_s), replace=False)
+    if rng is None:
+        rng = np.random.RandomState()
+    index = rng.choice(len_s, min(select, len_s), replace=False)
+    if isinstance(streamlines, Streamlines):
+        return streamlines[index]
     return [streamlines[i] for i in index]
 
 
@@ -403,6 +470,83 @@ def select_by_rois(streamlines, rois, include, mode=None, affine=None,
             yield sl
 
 
+def cluster_confidence(streamlines, max_mdf=5, subsample=12, power=1,
+                       override=False):
+    """ Computes the cluster confidence index (cci), which is an
+    estimation of the support a set of streamlines gives to
+    a particular pathway.
+
+    Ex: A single streamline with no others in the dataset
+    following a similar pathway has a low cci. A streamline
+    in a bundle of 100 streamlines that follow similar
+    pathways has a high cci.
+
+    See: Jordan et al. 2017
+    (Based on streamline MDF distance from Garyfallidis et al. 2012)
+
+    Parameters
+    ----------
+    streamlines : list of 2D (N, 3) arrays
+        A sequence of streamlines of length N (# streamlines)
+    max_mdf : int
+        The maximum MDF distance (mm) that will be considered a
+        "supporting" streamline and included in cci calculation
+    subsample: int
+        The number of points that are considered for each streamline
+        in the calculation. To save on calculation time, each
+        streamline is subsampled to subsampleN points.
+    power: int
+        The power to which the MDF distance for each streamline
+        will be raised to determine how much it contributes to
+        the cci. High values of power make the contribution value
+        degrade much faster. Example: a streamline with 5mm MDF
+        similarity contributes 1/5 to the cci if power is 1, but
+        only contributes 1/5^2 = 1/25 if power is 2.
+    override: bool, False by default
+        override means that the cci calculation will still occur even
+        though there are short streamlines in the dataset that may alter
+        expected behaviour.
+
+    Returns
+    -------
+    Returns an array of CCI scores
+
+    References
+    ----------
+    [Jordan17] Jordan K. Et al., Cluster Confidence Index: A Streamline-Wise
+    Pathway Reproducibility Metric for Diffusion-Weighted MRI Tractography,
+    Journal of Neuroimaging, vol 28, no 1, 2017.
+
+    [Garyfallidis12] Garyfallidis E. et al., QuickBundles a method for
+    tractography simplification, Frontiers in Neuroscience,
+    vol 6, no 175, 2012.
+
+    """
+
+    # error if any streamlines are shorter than 20mm
+    lengths = list(length(streamlines))
+    if min(lengths) < 20 and not override:
+        raise ValueError('Short streamlines found. We recommend removing them.'
+                         ' To continue without removing short streamlines set'
+                         ' override=True')
+
+    # calculate the pairwise MDF distance between all streamlines in dataset
+    subsamp_sls = set_number_of_points(streamlines, subsample)
+
+    cci_score_mtrx = np.zeros([len(subsamp_sls)])
+
+    for i, sl in enumerate(subsamp_sls):
+        mdf_mx = bundles_distances_mdf([subsamp_sls[i]], subsamp_sls)
+        if (mdf_mx == 0).sum() > 1:
+            raise ValueError('Identical streamlines. CCI calculation invalid')
+        mdf_mx_oi = (mdf_mx > 0) & (mdf_mx < max_mdf) & ~ np.isnan(mdf_mx)
+        mdf_mx_oi_only = mdf_mx[mdf_mx_oi]
+        cci_score = np.sum(np.divide(1, np.power(mdf_mx_oi_only, power)))
+        cci_score_mtrx[i] = cci_score
+
+    return cci_score_mtrx
+
+
 def _orient_generator(out, roi1, roi2):
     """
     Helper function to `orient_by_rois`
@@ -437,7 +581,9 @@ def _orient_list(out, roi1, roi2):
         min1 = np.argmin(dist1, 0)
         min2 = np.argmin(dist2, 0)
         if min1[0] > min2[0]:
-            out[idx] = sl[::-1]
+            out[idx][:, 0] = sl[::-1][:, 0]
+            out[idx][:, 1] = sl[::-1][:, 1]
+            out[idx][:, 2] = sl[::-1][:, 2]
     return out
 
 
@@ -508,7 +654,7 @@ def orient_by_rois(streamlines, roi1, roi2, in_place=False,
     # If it's a generator on input, we may as well generate it
     # here and now:
     if isinstance(streamlines, types.GeneratorType):
-        out = list(streamlines)
+        out = Streamlines(streamlines)
 
     elif in_place:
         out = streamlines
@@ -552,7 +698,8 @@ def _extract_vals(data, streamlines, affine=None, threedvec=False):
     """
     data = data.astype(np.float)
     if (isinstance(streamlines, list) or
-            isinstance(streamlines, types.GeneratorType)):
+            isinstance(streamlines, types.GeneratorType) or
+            isinstance(streamlines, Streamlines)):
         if affine is not None:
             streamlines = ut.move_streamlines(streamlines,
                                               np.linalg.inv(affine))
@@ -560,11 +707,11 @@ def _extract_vals(data, streamlines, affine=None, threedvec=False):
         vals = []
         for sl in streamlines:
             if threedvec:
-                vals.append(list(vfu.interpolate_vector_3d(data,
-                                 sl.astype(np.float))[0]))
+                vals.append(list(vfu.interpolate_vector_3d(
+                    data, sl.astype(np.float))[0]))
             else:
-                vals.append(list(vfu.interpolate_scalar_3d(data,
-                                 sl.astype(np.float))[0]))
+                vals.append(list(vfu.interpolate_scalar_3d(
+                    data, sl.astype(np.float))[0]))
 
     elif isinstance(streamlines, np.ndarray):
         sl_shape = streamlines.shape
@@ -632,11 +779,11 @@ def values_from_volume(data, streamlines, affine=None):
             return _extract_vals(data, streamlines, affine=affine,
                                  threedvec=True)
         if isinstance(streamlines, types.GeneratorType):
-            streamlines = list(streamlines)
+            streamlines = Streamlines(streamlines)
         vals = []
         for ii in range(data.shape[-1]):
             vals.append(_extract_vals(data[..., ii], streamlines,
-                        affine=affine))
+                                      affine=affine))
 
         if isinstance(vals[-1], np.ndarray):
             return np.swapaxes(np.array(vals), 2, 1).T
@@ -653,3 +800,7 @@ def values_from_volume(data, streamlines, affine=None):
         return _extract_vals(data, streamlines, affine=affine)
     else:
         raise ValueError("Data needs to have 3 or 4 dimensions")
+
+
+def nbytes(streamlines):
+    return streamlines._data.nbytes / 1024. ** 2

@@ -134,7 +134,7 @@ def connectivity_matrix(streamlines, label_volume, voxel_size=None,
         This argument is deprecated.
     affine : array_like (4, 4)
         The mapping from voxel coordinates to streamline coordinates.
-    symmetric : bool, False by default
+    symmetric : bool, True by default
         Symmetric means we don't distinguish between start and end points. If
         symmetric is True, ``matrix[i, j] == matrix[j, i]``.
     return_mapping : bool, False by default
@@ -311,7 +311,7 @@ def subsegment(streamlines, max_segment_length):
             elif ns > 1:
                 small_d = diff[ii]/ns
                 point = sl[ii]
-                for jj in xrange(ns):
+                for _ in xrange(ns):
                     point = point + small_d
                     output_sl[count] = point
                     count += 1
@@ -361,7 +361,6 @@ def seeds_from_mask(mask, density=[1, 1, 1], voxel_size=None, affine=None):
     >>> mask[0,0,0] = 1
     >>> seeds_from_mask(mask, [1,1,1], [1,1,1])
     array([[ 0.5,  0.5,  0.5]])
-
     >>> seeds_from_mask(mask, [1,2,3], [1,1,1])
     array([[ 0.5       ,  0.25      ,  0.16666667],
            [ 0.5       ,  0.75      ,  0.16666667],
@@ -375,7 +374,6 @@ def seeds_from_mask(mask, density=[1, 1, 1], voxel_size=None, affine=None):
            [ 0.55 ,  0.55 ,  1.875],
            [ 0.55 ,  1.65 ,  5.625],
            [ 0.55 ,  1.65 ,  6.875]])
-
     """
     mask = np.array(mask, dtype=bool, copy=False, ndmin=3)
     if mask.ndim != 3:
@@ -415,7 +413,7 @@ def seeds_from_mask(mask, density=[1, 1, 1], voxel_size=None, affine=None):
 
 
 def random_seeds_from_mask(mask, seeds_count=1, seed_count_per_voxel=True,
-                           affine=None):
+                           affine=None, random_seed=None):
     """Creates randomly placed seeds for fiber tracking from a binary mask.
 
     Seeds points are placed randomly distributed in voxels of ``mask``
@@ -423,8 +421,7 @@ def random_seeds_from_mask(mask, seeds_count=1, seed_count_per_voxel=True,
     If ``seed_count_per_voxel`` is ``True``, this function is
     similar to ``seeds_from_mask()``, with the difference that instead of
     evenly distributing the seeds, it randomly places the seeds within the
-    voxels specified by the ``mask``. The initial random conditions can be set
-    using ``numpy.random.seed(...)``, prior to calling this function.
+    voxels specified by the ``mask``.
 
     Parameters
     ----------
@@ -441,6 +438,8 @@ def random_seeds_from_mask(mask, seeds_count=1, seed_count_per_voxel=True,
         The mapping between voxel indices and the point space for seeds. A
         seed point at the center the voxel ``[i, j, k]`` will be represented as
         ``[x, y, z]`` where ``[x, y, z, 1] == np.dot(affine, [i, j, k , 1])``.
+    random_seed : int
+        The seed for the random seed generator (numpy.random.seed).
 
     See Also
     --------
@@ -455,31 +454,37 @@ def random_seeds_from_mask(mask, seeds_count=1, seed_count_per_voxel=True,
     --------
     >>> mask = np.zeros((3,3,3), 'bool')
     >>> mask[0,0,0] = 1
-
-    >>> np.random.seed(1)
-    >>> random_seeds_from_mask(mask, seeds_count=1, seed_count_per_voxel=True)
-    array([[-0.082978  ,  0.22032449, -0.49988563]])
-
-    >>> random_seeds_from_mask(mask, seeds_count=6, seed_count_per_voxel=True)
-    array([[-0.19766743, -0.35324411, -0.40766141],
-           [-0.31373979, -0.15443927, -0.10323253],
-           [ 0.03881673, -0.08080549,  0.1852195 ],
-           [-0.29554775,  0.37811744, -0.47261241],
-           [ 0.17046751, -0.0826952 ,  0.05868983],
-           [-0.35961306, -0.30189851,  0.30074457]])
+    >>> random_seeds_from_mask(mask, seeds_count=1, seed_count_per_voxel=True,
+    ... random_seed=1)
+    array([[-0.0640051 , -0.47407377,  0.04966248]])
+    >>> random_seeds_from_mask(mask, seeds_count=6, seed_count_per_voxel=True,
+    ... random_seed=1)
+    array([[-0.0640051 , -0.47407377,  0.04966248],
+           [ 0.0507979 ,  0.20814782, -0.20909526],
+           [ 0.46702984,  0.04723225,  0.47268436],
+           [-0.27800683,  0.37073231, -0.29328084],
+           [ 0.39286015, -0.16802019,  0.32122912],
+           [-0.42369171,  0.27991879, -0.06159077]])
     >>> mask[0,1,2] = 1
-    >>> random_seeds_from_mask(mask, seeds_count=2, seed_count_per_voxel=True)
-    array([[ 0.46826158, -0.18657582,  0.19232262],
-           [ 0.37638915,  0.39460666, -0.41495579],
-           [-0.46094522,  0.66983042,  2.3781425 ],
-           [-0.40165317,  0.92110763,  2.45788953]])
-
+    >>> random_seeds_from_mask(mask, seeds_count=2, seed_count_per_voxel=True,
+    ... random_seed=1)
+    array([[-0.0640051 , -0.47407377,  0.04966248],
+           [-0.27800683,  1.37073231,  1.70671916],
+           [ 0.0507979 ,  0.20814782, -0.20909526],
+           [-0.48962585,  1.00187459,  1.99577329]])
     """
     mask = np.array(mask, dtype=bool, copy=False, ndmin=3)
     if mask.ndim != 3:
         raise ValueError('mask cannot be more than 3d')
 
-    where = np.argwhere(mask)
+    # Randomize the voxels
+    np.random.seed(random_seed)
+    shape = mask.shape
+    mask = mask.flatten()
+    indices = np.arange(len(mask))
+    np.random.shuffle(indices)
+
+    where = [np.unravel_index(i, shape) for i in indices if mask[i] == 1]
     num_voxels = len(where)
 
     if not seed_count_per_voxel:
@@ -488,16 +493,23 @@ def random_seeds_from_mask(mask, seeds_count=1, seed_count_per_voxel=True,
     else:
         seeds_per_voxel = seeds_count
 
-    # Generate as many random triplets as the number of seeds needed
-    grid = np.random.random([seeds_per_voxel * num_voxels, 3])
-    # Repeat elements of 'where' so that it can be added to grid
-    where = np.repeat(where, seeds_per_voxel, axis=0)
-    seeds = where + grid - .5
+    seeds = []
+    for i in range(1, seeds_per_voxel + 1):
+        for s in where:
+            # Set the random seed with the current seed, the current value of
+            # seeds per voxel and the global random seed.
+            if random_seed is not None:
+                s_random_seed = hash((np.sum(s) + 1) * i + random_seed) \
+                    % (2**32 - 1)
+                np.random.seed(s_random_seed)
+            # Generate random triplet
+            grid = np.random.random(3)
+            seed = s + grid - .5
+            seeds.append(seed)
     seeds = asarray(seeds)
 
     if not seed_count_per_voxel:
-        # Randomize the seeds and select the requested amount
-        np.random.shuffle(seeds)
+        # Select the requested amount
         seeds = seeds[:seeds_count]
 
     # Apply the spatial transform
@@ -576,10 +588,10 @@ def target(streamlines, target_mask, affine, include=True):
 @_with_initialize
 def target_line_based(streamlines, target_mask, affine=None, include=True):
     """Filters streamlines based on whether or not they pass through a ROI,
-    using a line-based algorithm. Mostly used as a remplacement of `target`
+    using a line-based algorithm. Mostly used as a replacement of `target`
     for compressed streamlines.
 
-    This function never returns single-point streamlines, wathever the
+    This function never returns single-point streamlines, whatever the
     value of `include`.
 
     Parameters
@@ -1011,7 +1023,7 @@ def flexi_tvis_affine(sl_vox_order, grid_affine, dim, voxel_size):
     sl_ornt = orientation_from_string(str(sl_vox_order))
     grid_ornt = nib.io_orientation(grid_affine)
     reorder_grid = reorder_voxels_affine(
-        grid_ornt, sl_ornt, np.array(dim)-1, np.array([1,1,1]))
+        grid_ornt, sl_ornt, np.array(dim)-1, np.array([1, 1, 1]))
 
     tvis_aff = affine_for_trackvis(voxel_size)
 
@@ -1028,9 +1040,11 @@ def get_flexi_tvis_affine(tvis_hdr, nii_aff):
     ----------
     tvis_hdr : header from a trackvis file
     nii_aff : array (4, 4),
-        An affine matrix describing the current space of the grid in relation to RAS+ scanner space
+        An affine matrix describing the current space of the grid in relation
+        to RAS+ scanner space
     nii_data : nd array
-        3D array, each with shape (x, y, z) corresponding to the shape of the brain volume.
+        3D array, each with shape (x, y, z) corresponding to the shape of the
+        brain volume.
 
     Returns
     -------
@@ -1060,6 +1074,7 @@ def _min_at(a, index, value):
     value = value[uniq]
 
     a[tuple(index)] = np.minimum(a[tuple(index)], value)
+
 
 try:
     minimum_at = np.minimum.at

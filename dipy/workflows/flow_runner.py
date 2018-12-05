@@ -1,7 +1,13 @@
 from __future__ import division, print_function, absolute_import
 
+#  Disabling the FutureWarning from h5py below.
+#  This disables the FutureWarning warning for all the workflows.
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
+
 import logging
 
+from dipy import __version__ as dipy_version
 from dipy.utils.six import iteritems
 from dipy.workflows.base import IntrospectiveArgumentParser
 
@@ -12,7 +18,7 @@ def get_level(lvl):
     """
     try:
         return logging._levelNames[lvl]
-    except:
+    except Exception:
         return logging.INFO
 
 
@@ -30,8 +36,11 @@ def run_flow(flow):
                         action='store_true', default=False,
                         help='Force overwriting output files.')
 
+    parser.add_argument('--version', action='version',
+                        version='DIPY {}'.format(dipy_version))
+
     parser.add_argument('--out_strat', action='store', dest='out_strat',
-                        metavar='string', required=False, default='append',
+                        metavar='string', required=False, default='absolute',
                         help='Strategy to manage output creation.')
 
     parser.add_argument('--mix_names', dest='mix_names',
@@ -80,4 +89,3 @@ def run_flow(flow):
         flow.set_sub_flows_optionals(sub_flows_dicts)
 
     return flow.run(**args)
-

@@ -12,7 +12,7 @@ from nose.tools import assert_raises
 from dipy.sims.voxel import multi_tensor_dki
 from dipy.io.gradients import read_bvals_bvecs
 from dipy.core.gradients import gradient_table
-from dipy.data import get_data
+from dipy.data import get_fnames
 from dipy.reconst.dti import (from_lower_triangular, decompose_tensor)
 from dipy.reconst.dki import (mean_kurtosis, carlson_rf,  carlson_rd,
                               axial_kurtosis, radial_kurtosis, _positive_evals,
@@ -22,7 +22,7 @@ from dipy.core.sphere import Sphere
 from dipy.data import get_sphere
 from dipy.core.geometry import (sphere2cart, perpendicular_directions)
 
-fimg, fbvals, fbvecs = get_data('small_64D')
+fimg, fbvals, fbvecs = get_fnames('small_64D')
 bvals, bvecs = read_bvals_bvecs(fbvals, fbvecs)
 gtab = gradient_table(bvals, bvecs)
 
@@ -720,15 +720,15 @@ def test_multi_voxel_kurtosis_maximum():
 
     # TEST - when no sphere is given
     k_max = dki.kurtosis_maximum(dkiF.model_params)
-    assert_almost_equal(k_max, RK, decimal=5)
+    assert_almost_equal(k_max, RK, decimal=4)
 
     # TEST - when sphere is given
     k_max = dki.kurtosis_maximum(dkiF.model_params, sphere)
-    assert_almost_equal(k_max, RK, decimal=5)
+    assert_almost_equal(k_max, RK, decimal=4)
 
     # TEST - when mask is given
     mask = np.ones((2, 2, 2), dtype='bool')
     mask[1, 1, 1] = 0
     RK[1, 1, 1] = 0
     k_max = dki.kurtosis_maximum(dkiF.model_params, mask=mask)
-    assert_almost_equal(k_max, RK, decimal=5)
+    assert_almost_equal(k_max, RK, decimal=4)

@@ -2,7 +2,7 @@ import os
 import numpy as np
 import numpy.testing
 
-from dipy.data import get_data, get_sphere
+from dipy.data import get_fnames, get_sphere
 from dipy.core.gradients import gradient_table
 from dipy.reconst.gqi import GeneralizedQSamplingModel
 from dipy.reconst.dti import TensorModel, quantize_evecs
@@ -68,10 +68,9 @@ def test_eudx_further():
     """ Cause we love testin.. ;-)
     """
 
-    fimg, fbvals, fbvecs = get_data('small_101D')
+    fimg, fbvals, fbvecs = get_fnames('small_101D')
 
     img = ni.load(fimg)
-    affine = img.affine
     data = img.get_data()
     gtab = gradient_table(fbvals, fbvecs)
     tensor_model = TensorModel(gtab)
@@ -124,10 +123,9 @@ def test_eudx_further():
 
 def test_eudx_bad_seed():
     """Test passing a bad seed to eudx"""
-    fimg, fbvals, fbvecs = get_data('small_101D')
+    fimg, fbvals, fbvecs = get_fnames('small_101D')
 
     img = ni.load(fimg)
-    affine = img.affine
     data = img.get_data()
     gtab = gradient_table(fbvals, fbvecs)
     tensor_model = TensorModel(gtab)
@@ -144,7 +142,6 @@ def test_eudx_bad_seed():
     seed = [1., 5., 8.]
     eu = EuDX(a=ten.fa, ind=ind, seeds=[seed],
               odf_vertices=sphere.vertices, a_low=.2)
-    track = list(eu)
 
     seed = [-1., 1000000., 1000000.]
     eu = EuDX(a=ten.fa, ind=ind, seeds=[seed],

@@ -5,6 +5,7 @@ from dipy.reconst.odf import OdfModel, OdfFit
 from dipy.reconst.cache import Cache
 from dipy.reconst.multi_voxel import multi_voxel_fit
 
+from dipy.testing import setup_test
 
 class DiffusionSpectrumModel(OdfModel, Cache):
 
@@ -30,9 +31,9 @@ class DiffusionSpectrumModel(OdfModel, Cache):
                 \end{eqnarray}
 
         where $\mathbf{r}$ is the displacement vector and $\mathbf{q}$ is the
-        wavector which corresponds to different gradient directions. Method
+        wave vector which corresponds to different gradient directions. Method
         used to calculate the ODFs. Here we implement the method proposed by
-        Wedeen et. al [1]_.
+        Wedeen et al. [1]_.
 
         The main assumption for this model is fast gradient switching and that
         the acquisition gradients will sit on a keyhole Cartesian grid in
@@ -58,10 +59,10 @@ class DiffusionSpectrumModel(OdfModel, Cache):
 
         References
         ----------
-        .. [1]  Wedeen V.J et. al, "Mapping Complex Tissue Architecture With
+        .. [1]  Wedeen V.J et al., "Mapping Complex Tissue Architecture With
         Diffusion Spectrum Magnetic Resonance Imaging", MRM 2005.
 
-        .. [2] Canales-Rodriguez E.J et. al, "Deconvolution in Diffusion
+        .. [2] Canales-Rodriguez E.J et al., "Deconvolution in Diffusion
         Spectrum Imaging", Neuroimage, 2010.
 
         .. [3] Garyfallidis E, "Towards an accurate brain tractography", PhD
@@ -73,6 +74,8 @@ class DiffusionSpectrumModel(OdfModel, Cache):
         and a reconstruction sphere, we calculate generalized FA for the first
         voxel in the data with the reconstruction performed using DSI.
 
+        >>> import warnings
+        >>> warnings.simplefilter("default")
         >>> from dipy.data import dsi_voxels, get_sphere
         >>> data, gtab = dsi_voxels()
         >>> sphere = get_sphere('symmetric724')
@@ -217,13 +220,13 @@ class DiffusionSpectrumFit(OdfFit):
 
         References
         ----------
-        .. [1] Descoteaux M. et. al, "Multiple q-shell diffusion propagator
+        .. [1] Descoteaux M. et al., "Multiple q-shell diffusion propagator
         imaging", Medical Image Analysis, vol 15, No. 4, p. 603-621, 2011.
 
         .. [2] Tuch D.S., "Diffusion MRI of Complex Tissue Structure",
          PhD Thesis, 2002.
 
-        .. [3] Wu Y. et. al, "Computation of Diffusion Function Measures
+        .. [3] Wu Y. et al., "Computation of Diffusion Function Measures
         in q -Space Using Magnetic Resonance Hybrid Diffusion Imaging",
         IEEE TRANSACTIONS ON MEDICAL IMAGING, vol. 27, No. 6, p. 858-865, 2008
 
@@ -246,7 +249,7 @@ class DiffusionSpectrumFit(OdfFit):
                 \end{equation}
 
         where $\hat{\mathbf{r}}$ is a point in the 3D Propagator space
-        (see Wu et. al [1]_).
+        (see Wu et al. [1]_).
 
         Parameters
         ----------
@@ -261,7 +264,7 @@ class DiffusionSpectrumFit(OdfFit):
 
         References
         ----------
-        .. [1] Wu Y. et. al, "Hybrid diffusion imaging", NeuroImage, vol 36,
+        .. [1] Wu Y. et al., "Hybrid diffusion imaging", NeuroImage, vol 36,
         p. 617-629, 2007.
 
         """
@@ -511,7 +514,7 @@ class DiffusionSpectrumDeconvModel(DiffusionSpectrumModel):
                 \end{eqnarray*}
 
         where $\mathbf{r}$ is the displacement vector and $\mathbf{q}$ is the
-        wavector which corresponds to different gradient directions,
+        wave vector which corresponds to different gradient directions,
         $M(\mathbf{q})$ is a mask corresponding to your q-space sampling and
         $\otimes$ is the convolution operator [1]_.
 
@@ -536,10 +539,10 @@ class DiffusionSpectrumDeconvModel(DiffusionSpectrumModel):
 
         References
         ----------
-        .. [1] Canales-Rodriguez E.J et. al, "Deconvolution in Diffusion
+        .. [1] Canales-Rodriguez E.J et al., "Deconvolution in Diffusion
         Spectrum Imaging", Neuroimage, 2010.
 
-        .. [2] Biggs David S.C. et. al, "Acceleration of Iterative Image
+        .. [2] Biggs David S.C. et al., "Acceleration of Iterative Image
         Restoration Algorithms", Applied Optics, vol. 36, No. 8, p. 1766-1775,
         1997.
 
@@ -626,7 +629,7 @@ def LR_deconv(prop, psf, numit=5, acc_factor=1):
 
     References
     ----------
-    .. [1] Biggs David S.C. et. al, "Acceleration of Iterative Image
+    .. [1] Biggs David S.C. et al., "Acceleration of Iterative Image
        Restoration Algorithms", Applied Optics, vol. 36, No. 8, p. 1766-1775,
        1997.
 

@@ -186,12 +186,10 @@ def test_affreg_all_transforms():
     # Test affine registration using all transforms with typical settings
 
     # Make sure dictionary entries are processed in the same order regardless
-    # of the platform.
-    # Otherwise any random numbers drawn within the loop would make
-    # the test non-deterministic even if we fix the seed before the loop.
-    # Right now, this test does not draw any samples,
-    # but we still sort the entries
-    # to prevent future related failures.
+    # of the platform. Otherwise any random numbers drawn within the loop would
+    # make the test non-deterministic even if we fix the seed before the loop.
+    # Right now, this test does not draw any samples, but we still sort the
+    # entries to prevent future related failures.
     for ttype in sorted(factors):
         dim = ttype[1]
         if dim == 2:
@@ -200,9 +198,14 @@ def test_affreg_all_transforms():
             nslices = 45
         factor = factors[ttype][0]
         sampling_pc = factors[ttype][1]
-        transform = regtransforms[ttype]
-        static, moving, static_grid2world, moving_grid2world, smask, mmask, T = \
-            setup_random_transform(transform, factor, nslices, 1.0)
+        trans = regtransforms[ttype]
+        # Shorthand:
+        srt = setup_random_transform
+        static, moving, static_g2w, moving_g2w, smask, mmask, T = srt(
+                                                                      trans,
+                                                                      factor,
+                                                                      nslices,
+                                                                      1.0)
         # Sum of absolute differences
         start_sad = np.abs(static - moving).sum()
         metric = imaffine.MutualInformationMetric(32, sampling_pc)
@@ -213,9 +216,9 @@ def test_affreg_all_transforms():
                                              'L-BFGS-B',
                                              None,
                                              options=None)
-        x0 = transform.get_identity_parameters()
-        affine_map = affreg.optimize(static, moving, transform, x0,
-                                     static_grid2world, moving_grid2world)
+        x0 = trans.get_identity_parameters()
+        affine_map = affreg.optimize(static, moving, trans, x0,
+                                     static_g2w, moving_g2w)
         transformed = affine_map.transform(moving)
         # Sum of absolute differences
         end_sad = np.abs(static - transformed).sum()
@@ -243,9 +246,7 @@ def test_affreg_defaults():
         else:
             nslices = 45
         factor = factors[ttype][0]
-        sampling_pc = factors[ttype][1]
         transform = regtransforms[ttype]
-        id_param = transform.get_identity_parameters()
         static, moving, static_grid2world, moving_grid2world, smask, mmask, T = \
             setup_random_transform(transform, factor, nslices, 1.0)
         # Sum of absolute differences
@@ -401,9 +402,6 @@ def test_affine_map():
     np.random.seed(2112927)
     dom_shape = np.array([64, 64, 64], dtype=np.int32)
     cod_shape = np.array([80, 80, 80], dtype=np.int32)
-    nx = dom_shape[0]
-    ny = dom_shape[1]
-    nz = dom_shape[2]
     # Radius of the circle/sphere (testing image)
     radius = 16
     # Rotation axis (used for 3D transforms only)
@@ -475,7 +473,7 @@ def test_affine_map():
                 # compatibility with previous versions
                 assert_array_equal(affine, affine_map.affine)
                 # new getter
-                new_copy_affine = affine_map.get_affine()
+                new_copy_affine = affine_map.affine
                 # value must be the same
                 assert_array_equal(affine, new_copy_affine)
                 # but not its reference
@@ -517,12 +515,12 @@ def test_affine_map():
             aff_map = AffineMap(affine_mat)
             if affine_mat is None:
                 continue
-            bad_aug = aff_map.get_affine()
+            bad_aug = aff_map.affine
             # no zeros in the first n-1 columns on last row
             bad_aug[-1,:] = 1
             assert_raises(AffineInvalidValuesError, AffineMap, bad_aug)
 
-            bad_aug = aff_map.get_affine()
+            bad_aug = aff_map.affine
             bad_aug[-1, -1] = 0  # lower right not 1
             assert_raises(AffineInvalidValuesError, AffineMap, bad_aug)
 

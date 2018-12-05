@@ -145,10 +145,10 @@ def test_downsample():
     assert_equal(np.sum(res), 0)
 
     """
-    from dipy.data import get_data
+    from dipy.data import get_fnames
     from nibabel import trackvis as tv
 
-    streams, hdr = tv.read(get_data('fornix'))
+    streams, hdr = tv.read(get_fnames('fornix'))
     Td = [tm.downsample(s[0], pts) for s in streams]
     T = [s[0] for s in streams]
 
@@ -172,7 +172,7 @@ def test_splines():
     z += np.random.normal(scale=0.1, size=z.shape)
     xyz = np.vstack((x, y, z)).T
     # get the B-splines smoothed result
-    xyzn = tm.spline(xyz, 3, 2, -1)
+    tm.spline(xyz, 3, 2, -1)
 
 
 def test_segment_intersection():

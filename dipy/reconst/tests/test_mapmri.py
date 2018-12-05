@@ -1,29 +1,31 @@
+import platform
+import time
+from math import factorial
+
+from scipy.special import gamma
+import scipy.integrate as integrate
 import numpy as np
-from dipy.data import get_gtab_taiwan_dsi
 from numpy.testing import (assert_almost_equal,
                            assert_array_almost_equal,
                            assert_equal,
                            run_module_suite,
                            assert_raises)
+
+from dipy.data import get_gtab_taiwan_dsi
 from dipy.reconst.mapmri import MapmriModel, mapmri_index_matrix
 from dipy.reconst import dti, mapmri
 from dipy.sims.voxel import (MultiTensor,
                              multi_tensor_pdf,
                              single_tensor,
                              cylinders_and_ball_soderman)
-from scipy.special import gamma
-from math import factorial
 from dipy.data import get_sphere
 from dipy.sims.voxel import add_noise
-import scipy.integrate as integrate
 from dipy.core.sphere_stats import angular_similarity
 from dipy.direction.peaks import peak_directions
 from dipy.reconst.odf import gfa
 from dipy.reconst.tests.test_dsi import sticks_and_ball_dummies
 from dipy.core.subdivide_octahedron import create_unit_sphere
 from dipy.reconst.shm import sh_to_sf
-import time
-
 
 def int_func(n):
     f = np.sqrt(2) * factorial(n) / float(((gamma(1 + n / 2.0)) *
@@ -71,11 +73,6 @@ def test_orthogonality_basis_functions():
     # do the same for the isotropic mapmri basis functions
     # we already know the spherical harmonics are orthonormal
     # only check j>0, l=0 basis functions
-    C1 = mapmri.mapmri_isotropic_radial_pdf_basis(1, 0, diffusivity, 0)
-    C2 = mapmri.mapmri_isotropic_radial_pdf_basis(2, 0, diffusivity, 0)
-    C3 = mapmri.mapmri_isotropic_radial_pdf_basis(3, 0, diffusivity, 0)
-    C4 = mapmri.mapmri_isotropic_radial_pdf_basis(4, 0, diffusivity, 0)
-    C5 = mapmri.mapmri_isotropic_radial_pdf_basis(4, 0, diffusivity, 0)
 
     int1 = integrate.quad(lambda q:
                           mapmri.mapmri_isotropic_radial_signal_basis(
@@ -286,9 +283,12 @@ def test_mapmri_isotropic_static_scale_factor(radial_order=6):
     # test if indeed the scale factor is fixed now
     assert_equal(np.all(mapf_scale_stat_reg_stat.mu == mu),
                  True)
-    # test if computation time is shorter
-    assert_equal(time_scale_stat_reg_stat < time_scale_adapt_reg_stat,
-                 True)
+
+    # test if computation time is shorter (except on Windows):
+    if not platform.system() == "Windows":
+        assert_equal(time_scale_stat_reg_stat < time_scale_adapt_reg_stat,
+                    True)
+
     # check if the fitted signal is the same
     assert_almost_equal(mapf_scale_stat_reg_stat.fitted_signal(),
                         mapf_scale_adapt_reg_stat.fitted_signal())
@@ -631,9 +631,9 @@ def test_positivity_constraint(radial_order=6):
     max_radius = 15e-3  # 20 microns maximum radius
     r_grad = mapmri.create_rspace(gridsize, max_radius)
 
-    # the posivitivity constraint does not make the pdf completely positive
+    # The positivity constraint does not make the pdf completely positive
     # but greatly decreases the amount of negativity in the constrained points.
-    # we test if the amount of negative pdf has decreased more than 90%
+    # We test if the amount of negative pdf has decreased more than 90%
 
     mapmod_no_constraint = MapmriModel(gtab, radial_order=radial_order,
                                        laplacian_regularization=False,

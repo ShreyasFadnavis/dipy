@@ -1,4 +1,4 @@
-from os.path import join
+from os.path import join as pjoin
 
 import nibabel as nib
 from nibabel.tmpdirs import TemporaryDirectory
@@ -6,9 +6,12 @@ from nibabel.tmpdirs import TemporaryDirectory
 import numpy as np
 
 from nose.tools import eq_
+import numpy.testing as npt
 from dipy.reconst import mapmri
 
-from dipy.data import get_data
+from dipy.data import get_fnames
+from dipy.io.gradients import read_bvals_bvecs
+from dipy.core.gradients import generate_bvecs
 from dipy.workflows.reconst import ReconstMAPMRIFlow
 
 
@@ -32,13 +35,13 @@ def test_reconst_mmri_positivity():
 
 def reconst_mmri_core(flow, lap, pos):
     with TemporaryDirectory() as out_dir:
-        data_path, bval_path, bvec_path = get_data('small_25')
+        data_path, bval_path, bvec_path = get_fnames('small_25')
         vol_img = nib.load(data_path)
         volume = vol_img.get_data()
 
         mmri_flow = flow()
-        mmri_flow.run(data_file=data_path, data_bvals=bval_path,
-                      data_bvecs=bvec_path, small_delta=0.0129,
+        mmri_flow.run(data_files=data_path, bvals_files=bval_path,
+                      bvecs_files=bvec_path, small_delta=0.0129,
                       big_delta=0.0218, laplacian=lap,
                       positivity=pos, out_dir=out_dir)
 
@@ -77,6 +80,20 @@ def reconst_mmri_core(flow, lap, pos):
         perng = mmri_flow.last_generated_outputs['out_perng']
         perng_data = nib.load(perng).get_data()
         eq_(perng_data.shape, volume.shape[:-1])
+
+        bvals, bvecs = read_bvals_bvecs(bval_path, bvec_path)
+        bvals[0] = 5.
+        bvecs = generate_bvecs(len(bvals))
+        tmp_bval_path = pjoin(out_dir, "tmp.bval")
+        tmp_bvec_path = pjoin(out_dir, "tmp.bvec")
+        np.savetxt(tmp_bval_path, bvals)
+        np.savetxt(tmp_bvec_path, bvecs.T)
+        mmri_flow._force_overwrite = True
+        with npt.assert_raises(BaseException):
+            npt.assert_warns(UserWarning, mmri_flow.run, data_path,
+                             tmp_bval_path, tmp_bvec_path, small_delta=0.0129,
+                             big_delta=0.0218, laplacian=lap,
+                             positivity=pos, out_dir=out_dir)
 
 
 if __name__ == '__main__':

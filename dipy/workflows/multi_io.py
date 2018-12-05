@@ -7,6 +7,7 @@ from glob import glob
 from dipy.utils.six import string_types
 from dipy.workflows.base import get_args_default
 
+
 def common_start(sa, sb):
     """ Returns the longest common substring from the beginning of sa and sb """
     def _iter():
@@ -23,7 +24,7 @@ def slash_to_under(dir_str):
     return ''.join(dir_str.replace('/', '_'))
 
 
-def connect_output_paths(inputs, out_dir, out_files, output_strategy='append',
+def connect_output_paths(inputs, out_dir, out_files, output_strategy='absolute',
                          mix_names=True):
     """ Generates a list of output files paths based on input files and
     output strategies.
@@ -84,7 +85,6 @@ def connect_output_paths(inputs, out_dir, out_files, output_strategy='append',
         elif output_strategy == 'append':
             dname = path.join(inp_dirname, out_dir)
 
-
         else:
             dname = out_dir
 
@@ -119,7 +119,7 @@ def basename_without_extension(fname):
     return result
 
 
-def io_iterator(inputs, out_dir, fnames, output_strategy='append',
+def io_iterator(inputs, out_dir, fnames, output_strategy='absolute',
                 mix_names=False, out_keys=None):
     """ Creates an IOIterator from the parameters.
 
@@ -150,7 +150,7 @@ def io_iterator(inputs, out_dir, fnames, output_strategy='append',
     return io_it
 
 
-def io_iterator_(frame, fnc, output_strategy='append', mix_names=False):
+def io_iterator_(frame, fnc, output_strategy='absolute', mix_names=False):
     """ Creates an IOIterator using introspection.
 
     Parameters
@@ -206,14 +206,14 @@ class IOIterator(object):
     outputs which can come from long lists of multiple or single inputs.
     """
 
-    def __init__(self, output_strategy='append', mix_names=False):
+    def __init__(self, output_strategy='absolute', mix_names=False):
         self.output_strategy = output_strategy
         self.mix_names = mix_names
         self.inputs = []
         self.out_keys = None
 
-
     def set_inputs(self, *args):
+        self.file_existence_check(args)
         self.input_args = list(args)
         self.inputs = [sorted(glob(inp)) for inp in self.input_args if type(inp) == str]
 
@@ -253,3 +253,9 @@ class IOIterator(object):
         IO = np.concatenate([I, O], axis=1)
         for i_o in IO:
             yield i_o
+
+    def file_existence_check(self, args):
+        input_args = [fname for fname in list(args) if isinstance(fname, str)]
+        for path in input_args:
+            if len(glob(path)) == 0:
+                raise IOError('File not found: '+path)

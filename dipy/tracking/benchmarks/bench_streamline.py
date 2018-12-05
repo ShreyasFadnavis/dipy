@@ -17,7 +17,7 @@ import numpy as np
 from numpy.testing import measure
 from numpy.testing import assert_array_equal, assert_array_almost_equal
 
-from dipy.data import get_data
+from dipy.data import get_fnames
 from nibabel import trackvis as tv
 
 from dipy.tracking.streamline import (set_number_of_points,
@@ -55,9 +55,7 @@ def generate_streamlines(nb_streamlines, min_nb_points, max_nb_points, rng):
 
 def bench_set_number_of_points():
     repeat = 5
-    nb_points = 42
     nb_streamlines = DATA['nb_streamlines']
-    streamlines = DATA["streamlines"]  # Streamlines as a list of ndarrays.
 
     msg = "Timing set_number_of_points() with {0:,} streamlines."
     print(msg.format(nb_streamlines * repeat))
@@ -74,7 +72,6 @@ def bench_set_number_of_points():
     assert_array_almost_equal([set_number_of_points_python(s) for s in DATA["streamlines"]],
                               set_number_of_points(DATA["streamlines"]))
 
-    streamlines = DATA['streamlines_arrseq']
     cython_time_arrseq = measure("set_number_of_points(streamlines, nb_points)", repeat)
     print("Cython time (ArrSeq): {0:.3f} sec".format(cython_time_arrseq))
     print("Speed up of {0:.2f}x".format(python_time/cython_time_arrseq))
@@ -87,7 +84,6 @@ def bench_set_number_of_points():
 def bench_length():
     repeat = 10
     nb_streamlines = DATA['nb_streamlines']
-    streamlines = DATA["streamlines"]  # Streamlines as a list of ndarrays.
 
     msg = "Timing length() with {0:,} streamlines."
     print(msg.format(nb_streamlines * repeat))
@@ -102,7 +98,6 @@ def bench_length():
     assert_array_almost_equal([length_python(s) for s in DATA["streamlines"]],
                               length(DATA["streamlines"]))
 
-    streamlines = DATA['streamlines_arrseq']
     cython_time_arrseq = measure("length(streamlines)", repeat)
     print("Cython time (ArrSeq): {0:.3f} sec".format(cython_time_arrseq))
     print("Speed up of {0:.2f}x".format(python_time/cython_time_arrseq))
@@ -114,7 +109,7 @@ def bench_length():
 
 def bench_compress_streamlines():
     repeat = 10
-    fname = get_data('fornix')
+    fname = get_fnames('fornix')
     streams, hdr = tv.read(fname)
     streamlines = [i[0] for i in streams]
 
@@ -124,7 +119,7 @@ def bench_compress_streamlines():
     print("Cython time: {0:.3}sec".format(cython_time))
     del streamlines
 
-    fname = get_data('fornix')
+    fname = get_fnames('fornix')
     streams, hdr = tv.read(fname)
     streamlines = [i[0] for i in streams]
     python_time = measure("map(compress_streamlines_python, streamlines)",

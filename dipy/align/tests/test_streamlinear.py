@@ -22,7 +22,7 @@ from dipy.tracking.streamline import (center_streamlines,
 
 from dipy.core.geometry import compose_matrix
 
-from dipy.data import get_data, two_cingulum_bundles
+from dipy.data import get_fnames, two_cingulum_bundles
 from nibabel import trackvis as tv
 from dipy.align.bundlemin import (_bundle_minimum_distance_matrix,
                                   _bundle_minimum_distance,
@@ -45,7 +45,7 @@ def simulated_bundle(no_streamlines=10, waves=False, no_pts=12):
 
 
 def fornix_streamlines(no_pts=12):
-    fname = get_data('fornix')
+    fname = get_fnames('fornix')
     streams, hdr = tv.read(fname)
     streamlines = [set_number_of_points(i[0], no_pts) for i in streams]
     return streamlines
@@ -155,7 +155,7 @@ def test_stream_rigid():
 
     static = fornix_streamlines()[:20]
     moving = fornix_streamlines()[20:40]
-    static_center, shift = center_streamlines(static)
+    center_streamlines(static)
 
     mat = compose_matrix44([0, 0, 0, 0, 40, 0])
     moving = transform_streamlines(moving, mat)
@@ -303,7 +303,7 @@ def test_from_to_rigid():
 def test_matrix44():
 
     assert_raises(ValueError, compose_matrix44, np.ones(5))
-    assert_raises(ValueError, compose_matrix44, np.ones(9))
+    assert_raises(ValueError, compose_matrix44, np.ones(13))
     assert_raises(ValueError, compose_matrix44, np.ones(16))
 
 

@@ -3,12 +3,11 @@
 Advanced interactive visualization
 ==================================
 
-In dipy_ we created a thin interface to access many of the capabilities
+In DIPY_ we created a thin interface to access many of the capabilities
 available in the Visualization Toolkit framework (VTK) but tailored to the
 needs of structural and diffusion imaging. Initially the 3D visualization
-module was named ``fvtk``, meaning functions using vtk. This is still available
-for backwards compatibility but now there is a more comprehensive way to access
-the main functions using the following modules.
+module was named ``fvtk``, meaning functions using vtk. This is not available
+anymore.
 """
 
 import numpy as np
@@ -102,7 +101,6 @@ We can add additonal slicers by copying the original and adjusting the
 """
 
 image_actor_x = image_actor_z.copy()
-image_actor_x.opacity(slicer_opacity)
 x_midpoint = int(np.round(shape[0] / 2))
 image_actor_x.display_extent(x_midpoint,
                              x_midpoint, 0,
@@ -111,7 +109,6 @@ image_actor_x.display_extent(x_midpoint,
                              shape[2] - 1)
 
 image_actor_y = image_actor_z.copy()
-image_actor_y.opacity(slicer_opacity)
 y_midpoint = int(np.round(shape[1] / 2))
 image_actor_y.display_extent(0,
                              shape[0] - 1,
@@ -173,40 +170,32 @@ Now we will write callbacks for the sliders and register them.
 """
 
 
-def change_slice_z(i_ren, obj, slider):
+def change_slice_z(slider):
     z = int(np.round(slider.value))
     image_actor_z.display_extent(0, shape[0] - 1, 0, shape[1] - 1, z, z)
 
 
-def change_slice_x(i_ren, obj, slider):
+def change_slice_x(slider):
     x = int(np.round(slider.value))
     image_actor_x.display_extent(x, x, 0, shape[1] - 1, 0, shape[2] - 1)
 
 
-def change_slice_y(i_ren, obj, slider):
+def change_slice_y(slider):
     y = int(np.round(slider.value))
     image_actor_y.display_extent(0, shape[0] - 1, y, y, 0, shape[2] - 1)
 
 
-def change_opacity(i_ren, obj, slider):
+def change_opacity(slider):
     slicer_opacity = slider.value
     image_actor_z.opacity(slicer_opacity)
     image_actor_x.opacity(slicer_opacity)
     image_actor_y.opacity(slicer_opacity)
 
-line_slider_z.add_callback(line_slider_z.slider_disk,
-                           "MouseMoveEvent",
-                           change_slice_z)
-line_slider_x.add_callback(line_slider_x.slider_disk,
-                           "MouseMoveEvent",
-                           change_slice_x)
-line_slider_y.add_callback(line_slider_y.slider_disk,
-                           "MouseMoveEvent",
-                           change_slice_y)
-opacity_slider.add_callback(opacity_slider.slider_disk,
-                            "MouseMoveEvent",
-                            change_opacity)
 
+line_slider_z.on_change = change_slice_z
+line_slider_x.on_change = change_slice_x
+line_slider_y.on_change = change_slice_y
+opacity_slider.on_change = change_opacity
 """
 We'll also create text labels to identify the sliders.
 """
@@ -221,8 +210,7 @@ def build_label(text):
     label.bold = False
     label.italic = False
     label.shadow = False
-    label.actor.GetTextProperty().SetBackgroundColor(0, 0, 0)
-    label.actor.GetTextProperty().SetBackgroundOpacity(0.0)
+    label.background = (0, 0, 0)
     label.color = (1, 1, 1)
 
     return label
@@ -238,20 +226,20 @@ Now we will create a ``panel`` to contain the sliders and labels.
 """
 
 
-panel = ui.Panel2D(center=(1030, 120),
-                   size=(300, 200),
+panel = ui.Panel2D(size=(300, 200),
                    color=(1, 1, 1),
                    opacity=0.1,
                    align="right")
+panel.center = (1030, 120)
 
-panel.add_element(line_slider_label_x, 'relative', (0.1, 0.75))
-panel.add_element(line_slider_x, 'relative', (0.65, 0.8))
-panel.add_element(line_slider_label_y, 'relative', (0.1, 0.55))
-panel.add_element(line_slider_y, 'relative', (0.65, 0.6))
-panel.add_element(line_slider_label_z, 'relative', (0.1, 0.35))
-panel.add_element(line_slider_z, 'relative', (0.65, 0.4))
-panel.add_element(opacity_slider_label, 'relative', (0.1, 0.15))
-panel.add_element(opacity_slider, 'relative', (0.65, 0.2))
+panel.add_element(line_slider_label_x, (0.1, 0.75))
+panel.add_element(line_slider_x, (0.38, 0.75))
+panel.add_element(line_slider_label_y, (0.1, 0.55))
+panel.add_element(line_slider_y, (0.38, 0.55))
+panel.add_element(line_slider_label_z, (0.1, 0.35))
+panel.add_element(line_slider_z, (0.38, 0.35))
+panel.add_element(opacity_slider_label, (0.1, 0.15))
+panel.add_element(opacity_slider, (0.38, 0.15))
 
 show_m.ren.add(panel)
 
