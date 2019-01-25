@@ -70,9 +70,6 @@ microAx = ((D1*V) + ((D2)*(1-(V+Vw))) + 3*Vw)
 microRad = ((D3)*(1 - (V+Vw)) + 3*Vw)
 microFA = np.double(abs((D2-D1)/D3 + 4) > np.sqrt(40/3))
 
-# number of samples
-numsamples = len(D1)
-
 
 # computes q and b=|q| from tensor rep
 def getDirs(ten):
@@ -84,8 +81,31 @@ def getDirs(ten):
         D2 = D[sorted_indices_D]
         U2 = U[sorted_indices_U]
         scheme[:, i] = np.sqrt(D2[0])*U2[:, 0]
-        b = pow(scheme, 2)
-        return scheme, b
+    b = pow(scheme, 2)
+    return scheme, b
+
+
+# number of samples
+numsamples = len(D1)
+
+# projections of directions on gradient scheme
+scheme, b = getDirs(ten)
+
+# simulate the signals
+print('Simulating the Signal')
+
+
+def genSig(D1, D2, D3, V, Vw, pb):
+    return np.tile(V, (1, pb.shape[1])) \
+           * np.exp(-np.tile(D1, (1, pb.shape[1])) * pb) \
+           + np.tile(1-V-Vw, (1, pb.shape[1])) \
+           * np.exp(-np.tile(D2, (1, pb.shape[1]))
+                    * pb - np.tile(D3, (1, pb.shape[1]))
+                    * (np.tile(b, (pb.shape[0], 1)) - pb)) \
+           + np.tile(Vw, (1, pb.shape[1])) \
+           * np.exp(-np.tile(D1*0+3, (1, pb.shape[1]))
+                    * np.tile(b, (pb.shape[0], 1)))
+
 
 
 def fspecial_gauss(shape=(3, 3), sigma=0.5):
