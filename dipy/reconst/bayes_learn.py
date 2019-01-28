@@ -107,6 +107,24 @@ def genSig(D1, D2, D3, V, Vw, pb):
                     * np.tile(b, (pb.shape[0], 1)))
 
 
+signal = []
+ncross = [1, 2, 30]  # number of crossing fibers in the simulation
+for k in ncross:
+    signal_tmp = 0
+    W = 0
+
+    for j in range(k):
+        n = np.random.randn(3, numsamples)
+        n = n / np.tile(np.sqrt(sum(pow(n, 2))), (3, 1))
+        pb = pow(np.dot(np.transpose(n), scheme), 2)
+
+        stmp = genSig(D1, D2, D3, V, Vw, pb)
+        Wtmp = np.random.rand(numsamples, 1)
+        signal_tmp = signal_tmp + np.tile(Wtmp, (1, stmp.shape[1]))
+        W = W + Wtmp
+    signal_tmp = signal_tmp / np.tile(W, (1, stmp.shape[1]))
+    signal = np.asarray([signal, signal_tmp])
+    signal = np.transpose(signal)
 
 def fspecial_gauss(shape=(3, 3), sigma=0.5):
     """
