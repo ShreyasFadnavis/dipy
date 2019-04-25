@@ -48,12 +48,12 @@ B0 = pow(B0, 4)
 
 # sample parameter space
 
-nt = 10000
-D1 = 0.2 + np.random.rand(nt, 1) * 2.8
-D2 = 0.2 + np.random.rand(nt, 1) * 2.8
-D3 = 0.2 + np.random.rand(nt, 1) * 1.3
-V = np.random.rand(nt, 1) * 1
-Vw = (1-V) * np.random.rand(nt, 1)
+nt = 10**4
+D1 = np.squeeze(0.2 + np.random.rand(nt, 1) * 2.8)
+D2 = np.squeeze(0.2 + np.random.rand(nt, 1) * 2.8)
+D3 = np.squeeze(0.2 + np.random.rand(nt, 1) * 1.3)
+V = np.squeeze(np.random.rand(nt, 1))
+Vw = np.squeeze((1-V)) # * np.random.rand(nt, 1))
 
 # select those with similar traces
 idx = np.where(abs(D1-(D2+2*D3)) < 0.5)
@@ -95,16 +95,25 @@ scheme, b = getDirs(ten)
 print('Simulating the Signal')
 
 
-def genSig(D1, D2, D3, V, Vw, pb):
-    return np.tile(V, (1, pb.shape[1])) \
-           * np.exp(-np.tile(D1, (1, pb.shape[1])) * pb) \
-           + np.tile(1-V-Vw, (1, pb.shape[1])) \
-           * np.exp(-np.tile(D2, (1, pb.shape[1]))
-                    * pb - np.tile(D3, (1, pb.shape[1]))
-                    * (np.tile(b, (pb.shape[0], 1)) - pb)) \
-           + np.tile(Vw, (1, pb.shape[1])) \
-           * np.exp(-np.tile(D1*0+3, (1, pb.shape[1]))
-                    * np.tile(b, (pb.shape[0], 1)))
+def genSig(V, Vw, D1, D2, D3, pb, bvals):
+    return ((np.tile(V, (pb.shape[1], 1))).T) \
+            * np.exp((-np.tile(D1, (pb.shape[1], 1))).T * pb) \
+            + (np.tile(1-V-Vw, (pb.shape[1], 1))).T \
+            * (np.exp(-np.tile(D2, (pb.shape[1], 1)).T) * pb) \
+            - (np.tile(D3, (pb.shape[1], 1))).T \
+            * ((np.tile(bvals, (pb.shape[0], 1))) - pb) \
+            + (np.tile(Vw, (pb.shape[1], 1))).T \
+            * np.exp((-np.tile(D1*0+3, (pb.shape[1], 1))).T
+                     * np.tile(bvals, (pb.shape[0], 1)))
+
+
+# Stub code to test the above simulation
+def gen_sig_stub():
+    n = np.random.randn(3, numsamples)
+    n = n / np.tile(np.sqrt(sum(pow(n, 2))), (3, 1))
+    pb = pow(np.dot(np.transpose(n), scheme), 2)
+    Stmp = genSig(V, Vw, D1, D2, D3, pb, bvals)
+    return Stmp
 
 
 signal = []
@@ -118,13 +127,14 @@ for k in ncross:
         n = n / np.tile(np.sqrt(sum(pow(n, 2))), (3, 1))
         pb = pow(np.dot(np.transpose(n), scheme), 2)
 
-        stmp = genSig(D1, D2, D3, V, Vw, pb)
+        stmp = genSig(V, Vw, D1, D2, D3, pb, bvals)
         Wtmp = np.random.rand(numsamples, 1)
         signal_tmp = signal_tmp + np.tile(Wtmp, (1, stmp.shape[1]))
         W = W + Wtmp
     signal_tmp = signal_tmp / np.tile(W, (1, stmp.shape[1]))
     signal = np.asarray([signal, signal_tmp])
     signal = np.transpose(signal)
+
 
 def fspecial_gauss(shape=(3, 3), sigma=0.5):
     """
@@ -179,7 +189,7 @@ else:
     gau = makeGau(sigma_smooth, sz)
     sm2 = lambda x: np.real(sc.ifft(sc.fft(x) * gau))
     col = lambda x: x[:]
-    preproc = lambda x: sm2[np.reshape(x, sz[1:3])]  
+    preproc = lambda x: sm2[np.reshape(x, sz[1:3])]
 
 b0idx = np.round(b / 100) == 0
 
@@ -233,5 +243,4 @@ def compPowerSpec(b, scheme, lmax, S, pp, qspace, nmax, D0):
     buni = np.unique(round(b * 10)) / 10
     S[S > 2] = 0
     dirs = bvals
-    proj_tmp, idx_sh = shMatrix(dirs+np.spacing(1), lmax)    
-    
+    proj_tmp, idx_sh = shMatrix(dirs+np.spacing(1), lmax)
