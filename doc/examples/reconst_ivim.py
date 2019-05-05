@@ -210,7 +210,7 @@ def plot_map(raw_data, variable, limits, filename):
                cmap="gray", interpolation='nearest')
     plt.colorbar()
     plt.savefig(filename)
-    plt.close()
+#    plt.close()
 
 
 """
@@ -261,8 +261,8 @@ order : $\mathbf{S_{0}, f, D^*, D}$.
 """
 
 i, j = 10, 10
-estimated_params = ivimfit_vp.model_params[i, j, :]
-print(estimated_params)
+estimated_params_vp = ivimfit_vp.model_params[i, j, :]
+print(estimated_params_vp)
 
 """
 Next, we plot the results relative to the model fit with `fit_method='VarPro'`.
@@ -274,16 +274,25 @@ ivim_predict_vp = ivimfit_vp.predict(gtab)[i, j, :]
 plt.scatter(gtab.bvals, data_slice[i, j, :],
             color="green", label="Actual signal")
 plt.plot(gtab.bvals, ivim_predict_vp, color="red",
-         label="Estimated Signal")
+         label="Estimated Signal with VarPro")
+linestyle = '--'
+plt.plot(gtab.bvals, estimated_signal, color="cornflowerblue",
+         linestyle=linestyle, label="Estimated Signal with NLLS")
 plt.xlabel("bvalues")
 plt.ylabel("Signals")
 
-S0_est, f_est, D_star_est, D_est = estimated_params
+S0_est, f_est, D_star_est, D_est = estimated_params_vp
+S0_est_ls, f_est_ls, D_star_est_ls, D_est_ls = estimated_params
 
-text_fit = """Estimated \n S0={:06.3f} f={:06.4f}\n
-            D*={:06.5f} D={:06.5f}""".format(S0_est, f_est, D_star_est, D_est)
 
-plt.text(0.65, 0.50, text_fit, horizontalalignment='center',
+text_fit = """Estimated values with VarPro \n S0={:06.3f} f={:06.4f}
+            D*={:06.5f} D={:06.5f} \n""".format(S0_est, f_est, D_star_est, D_est)
+
+text_fit1 = """\n Estimated values with NLLS \n S0={:06.3f} f={:06.4f}
+            D*={:06.5f} D={:06.5f}""".format(S0_est_ls, f_est_ls,
+            D_star_est_ls, D_est_ls)
+
+plt.text(0.65, 0.50, text_fit + text_fit1, horizontalalignment='center',
          verticalalignment='center', transform=plt.gca().transAxes)
 plt.legend(loc='upper right')
 plt.savefig("ivim_voxel_plot.png")

@@ -97,3 +97,55 @@ class IoInfoFlow(Workflow):
                              .format(ncl1))
 
         np.set_printoptions()
+
+
+class FetchFlow(Workflow):
+
+    @classmethod
+    def get_short_name(cls):
+        return 'fetch_data'
+
+    def run(self, input_files='fetch_all'):
+        """ This workflow is specifically written to ease writing and enabling
+        examples in the workflow documentation and examples
+
+        Parameters
+        ----------
+        input_files : variable string
+            Any number of data fetchers already in DIPY
+        """
+
+        if input_files == 'fetch_all':
+            from dipy.data import (fetch_bundle_atlas_hcp842,
+                                   fetch_bundle_fa_hcp,
+                                   fetch_bundles_2_subjects,
+                                   fetch_cenir_multib, fetch_cfin_multib,
+                                   fetch_isbi2013_2shell, fetch_ivim,
+                                   fetch_mni_template, fetch_scil_b0,
+                                   fetch_sherbrooke_3shell,
+                                   fetch_stanford_hardi, fetch_stanford_labels,
+                                   fetch_stanford_pve_maps,
+                                   fetch_stanford_t1, fetch_taiwan_ntu_dsi,
+                                   fetch_syn_data, fetch_target_tractogram_hcp,
+                                   fetch_tissue_data)
+
+            # fetching all the data
+            fetch_bundle_atlas_hcp842()
+            fetch_bundle_fa_hcp()
+            fetch_bundles_2_subjects()
+            fetch_cenir_multib()
+            fetch_cfin_multib(),
+            fetch_isbi2013_2shell()
+            fetch_isbi2013_2shell()
+            fetch_ivim()
+            fetch_mni_template()
+            fetch_scil_b0()
+            fetch_sherbrooke_3shell()
+            fetch_stanford_hardi()
+            fetch_stanford_labels()
+            fetch_stanford_pve_maps()
+            fetch_stanford_t1()
+            fetch_syn_data()
+            fetch_taiwan_ntu_dsi()
+            fetch_target_tractogram_hcp()
+            fetch_tissue_data()
